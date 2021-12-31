@@ -1,6 +1,6 @@
 .PHONY: all clean
 
-PROGRAM = build/lib/libboundaries.a
+PROGRAM = build/lib/libfinbound.a
 OBJS = \
 	build/rectangle.o \
 	build/plane.o \

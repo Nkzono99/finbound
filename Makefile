@@ -1,31 +1,35 @@
 .PHONY: all clean
 
-PROGRAM = build/lib/libfinbound.a
+PROGRAM = build\lib\libfinbound.a
 OBJS = \
-	build/rectangle.o \
-	build/plane.o \
-	build/vector.o \
 	build/boundary_base.o \
 	build/circle.o \
-	build/cylinder.o
+	build/cylinder.o \
+	build/plane.o \
+	build/rectangle.o
 
 TEST_OBJS = \
 	build/test/boundary_assertion.o
 
 MODS = \
-	m_rectangle_boundary.mod \
-	m_plane_boundary.mod \
-	m_vector.mod \
 	m_boundary_base.mod \
 	m_circle_boundary.mod \
 	m_cylinder_boundary.mod \
+	m_plane_boundary.mod \
+	m_rectangle_boundary.mod \
 	m_boundary_assertion.mod
 
 LIBRARY_TO_BUILD = build/lib
 INCLUDE = build/include
 
-FC = ftn
-FLAGS = -module $(INCLUDE) -I$(INCLUDE) 
+FC = ftn  # ifort
+IFLAGS = -module $(INCLUDE) -I$(INCLUDE)
+
+# FC = gfortran
+# IFLAGS = -J$(INCLUDE) -I$(INCLUDE) 
+
+LFLAGS = -Llib/futils/build/lib -Ilib/futils/build/include/ -lfutils
+FLAGS = $(IFLAGS) $(LFLAGS) 
 AR = ar rc
 
 RM = rm -f
@@ -38,42 +42,43 @@ endif
 
 all: $(PROGRAM)
 
-$(PROGRAM): $(OBJS)
-	$(AR) $(PROGRAM) $^
+$(PROGRAM): $(OBJS) lib/futils/build/lib/libfutils.a
+	$(AR) $(PROGRAM) $(OBJS)
 
-build/rectangle.o: src/rectangle.F90 build/boundary_base.o
-	$(FC) $(FLAGS) -c $< -o build/rectangle.o
+build/boundary_base.o: src\boundary_base.F90 
+	$(FC) -c $< -o build/boundary_base.o $(FLAGS)
 
-build/plane.o: src/plane.F90 build/vector.o build/boundary_base.o
-	$(FC) $(FLAGS) -c $< -o build/plane.o
+build/circle.o: src\circle.F90 build/boundary_base.o
+	$(FC) -c $< -o build/circle.o $(FLAGS)
 
-build/vector.o: src/vector.F90 
-	$(FC) $(FLAGS) -c $< -o build/vector.o
+build/cylinder.o: src\cylinder.F90 build/boundary_base.o
+	$(FC) -c $< -o build/cylinder.o $(FLAGS)
 
-build/boundary_base.o: src/boundary_base.F90 
-	$(FC) $(FLAGS) -c $< -o build/boundary_base.o
+build/plane.o: src\plane.F90 build/boundary_base.o
+	$(FC) -c $< -o build/plane.o $(FLAGS)
 
-build/circle.o: src/circle.F90 build/boundary_base.o
-	$(FC) $(FLAGS) -c $< -o build/circle.o
+build/rectangle.o: src\rectangle.F90 build/boundary_base.o
+	$(FC) -c $< -o build/rectangle.o $(FLAGS)
 
-build/cylinder.o: src/cylinder.F90 build/vector.o build/boundary_base.o
-	$(FC) $(FLAGS) -c $< -o build/cylinder.o
-
-build/test/test_plane.exe: test/test_plane.F90 build/test/boundary_assertion.o $(PROGRAM)
-	$(FC) $(FLAGS) $^ -o build/test/test_plane.exe
+build/test/test_plane.exe: test\test_plane.F90 build/test/boundary_assertion.o $(PROGRAM)
+	$(FC) $^ -o build/test/test_plane.exe $(FLAGS)
 
 test_plane: build/test/test_plane.exe
 	./build/test/test_plane.exe
 
-build/test/boundary_assertion.o: test/boundary_assertion.F90  $(PROGRAM)
-	$(FC) $(FLAGS) -c $< -o build/test/boundary_assertion.o
+build/test/boundary_assertion.o: test\boundary_assertion.F90  $(PROGRAM)
+	$(FC) -c $< -o build/test/boundary_assertion.o $(FLAGS)
 
-test: test_plane build/test
+test: test_plane build/test 
+
+lib/futils/build/lib/libfutils.a:
+	make -C lib/futils builddir 
+	make -C lib/futils
 
 builddir:
 	-$(MKDIR) build
-	-$(MKDIR) build/test
-	-$(MKDIR) build/test/lib
+	-$(MKDIR) build\test
+	-$(MKDIR) build\test\lib
 	-$(MKDIR) $(LIBRARY_TO_BUILD)
 	-$(MKDIR) $(INCLUDE)
 
@@ -85,3 +90,4 @@ clean:
 	-$(RM) build/test/*.exe
 	-$(RM) build/test/*.o
 	-$(RM) build/test/lib/*.a
+	make -C lib/futils clean

@@ -21,8 +21,8 @@ module m_cylinder_boundary
         double precision :: radius
         double precision :: height
     contains
-        procedure check_collision => cylinderXYZ_check_collision
-        procedure is_overlap => cylinderXYZ_is_overlap
+        procedure :: check_collision => cylinderXYZ_check_collision
+        procedure :: is_overlap => cylinderXYZ_is_overlap
     end type
 
     private

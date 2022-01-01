@@ -6,7 +6,7 @@ module m_boundary_base
         double precision :: position(3)
         double precision :: t = -1.0d0
     contains
-        procedure to_string => record_to_string
+        procedure :: to_string => record_to_string
     end type
 
     type, abstract :: t_Boundary

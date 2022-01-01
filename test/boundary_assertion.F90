@@ -22,7 +22,7 @@ contains
             message_ = record%to_string()
         end if
 
-        if (record%is_collided /= is_collided) then
+        if (record%is_collided .neqv. is_collided) then
             print *, "AssertionError (is_collided): "//message_
             return
         end if

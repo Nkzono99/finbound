@@ -56,9 +56,11 @@ contains
             return
         end if
 
+        r = abs(d1)/(abs(d1) + abs(d2))
+
         record%is_collided = .true.
-        record%t = abs(d1)/(abs(d1) + abs(d2))
-        record%position = (p2 - p1)*record%t + p1
+        record%t = r
+        record%position = (p2 - p1)*r + p1
     end function
 
     pure function plane_is_overlap(self, sdoms) result(is_overlap)

@@ -10,8 +10,8 @@ module m_circle_boundary
         double precision :: radius
 
     contains
-        procedure check_collision => circleXYZ_check_collision
-        procedure is_overlap => circleXYZ_is_overlap
+        procedure :: check_collision => circleXYZ_check_collision
+        procedure :: is_overlap => circleXYZ_is_overlap
     end type
 
     private

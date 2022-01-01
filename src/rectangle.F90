@@ -13,8 +13,8 @@ module m_rectangle_boundary
         double precision :: w2
 
     contains
-        procedure check_collision => rectangleXYZ_check_collision
-        procedure is_overlap => rectangleXYZ_is_overlap
+        procedure :: check_collision => rectangleXYZ_check_collision
+        procedure :: is_overlap => rectangleXYZ_is_overlap
     end type
 
     private

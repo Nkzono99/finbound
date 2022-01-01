@@ -1,0 +1,13 @@
+{
+    "fortran.includePaths": [
+        "${workspaceFolder}/src"
+    ],
+    "fortran-ls.lowercaseIntrinsics": true,
+    "fortran.formatting.formatter": "fprettify",
+    "fortran.linterExtraArgs": [
+        "-Wall",
+        "-I${workspaceFolder}/src",
+        "-I${workspaceFolder}/test",
+        "-I${workspaceFolder}/lib/futils/src"
+    ],
+}

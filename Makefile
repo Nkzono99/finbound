@@ -24,8 +24,12 @@ MODS = \
 LIBRARY_TO_BUILD = build/lib
 INCLUDE = build/include
 
-FC = gfortran
-IFLAGS = -J$(INCLUDE) -I$(INCLUDE) 
+FC = ftn  # ifort
+IFLAGS = -module $(INCLUDE) -I$(INCLUDE) 
+
+# FC = gfortran
+# IFLAGS = -J$(INCLUDE) -I$(INCLUDE) 
+
 LFLAGS = -Llib/futils/build/lib -Ilib/futils/build/include/ -lfutils
 FLAGS = $(IFLAGS) $(LFLAGS) 
 AR = ar rc

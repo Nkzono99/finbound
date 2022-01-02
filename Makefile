@@ -6,7 +6,8 @@ OBJS = \
 	build/circle.o \
 	build/cylinder.o \
 	build/plane.o \
-	build/rectangle.o
+	build/rectangle.o \
+	build/plane_with_hole.o
 
 TEST_OBJS = \
 	build/test/boundary_assertion.o
@@ -17,17 +18,14 @@ MODS = \
 	m_cylinder_boundary.mod \
 	m_plane_boundary.mod \
 	m_rectangle_boundary.mod \
+	m_plane_with_hole_boundary.mod \
 	m_boundary_assertion.mod
 
 LIBRARY_TO_BUILD = build/lib
 INCLUDE = build/include
 
-FC = ftn  # ifort
-IFLAGS = -module $(INCLUDE) -I$(INCLUDE)
-
-# FC = gfortran
-# IFLAGS = -J$(INCLUDE) -I$(INCLUDE) 
-
+FC = gfortran
+IFLAGS = -J$(INCLUDE) -I$(INCLUDE) 
 LFLAGS = -Llib/futils/build/lib -Ilib/futils/build/include/ -lfutils
 FLAGS = $(IFLAGS) $(LFLAGS) 
 AR = ar rc
@@ -42,8 +40,8 @@ endif
 
 all: $(PROGRAM)
 
-$(PROGRAM): $(OBJS) lib/futils/build/lib/libfutils.a
-	$(AR) $(PROGRAM) $(OBJS)
+$(PROGRAM): $(OBJS)
+	$(AR) $(PROGRAM) $^
 
 build/boundary_base.o: src\boundary_base.F90 
 	$(FC) -c $< -o build/boundary_base.o $(FLAGS)
@@ -60,6 +58,9 @@ build/plane.o: src\plane.F90 build/boundary_base.o
 build/rectangle.o: src\rectangle.F90 build/boundary_base.o
 	$(FC) -c $< -o build/rectangle.o $(FLAGS)
 
+build/plane_with_hole.o: src\plane_with_hole.F90 build/boundary_base.o build/plane.o
+	$(FC) -c $< -o build/plane_with_hole.o $(FLAGS)
+
 build/test/test_plane.exe: test\test_plane.F90 build/test/boundary_assertion.o $(PROGRAM)
 	$(FC) $^ -o build/test/test_plane.exe $(FLAGS)
 
@@ -69,7 +70,27 @@ test_plane: build/test/test_plane.exe
 build/test/boundary_assertion.o: test\boundary_assertion.F90  $(PROGRAM)
 	$(FC) -c $< -o build/test/boundary_assertion.o $(FLAGS)
 
-test: test_plane build/test 
+build/test/test_rectangle.exe: test\test_rectangle.F90 build/test/boundary_assertion.o $(PROGRAM)
+	$(FC) $^ -o build/test/test_rectangle.exe $(FLAGS)
+
+test_rectangle: build/test/test_rectangle.exe
+	./build/test/test_rectangle.exe
+
+build/test/test_cylinder.exe: test\test_cylinder.F90 build/test/boundary_assertion.o $(PROGRAM)
+	$(FC) $^ -o build/test/test_cylinder.exe $(FLAGS)
+
+test_cylinder: build/test/test_cylinder.exe
+	./build/test/test_cylinder.exe
+
+build/test/test_plane_with_hole.exe: test\test_plane_with_hole.F90 build/test/boundary_assertion.o $(PROGRAM)
+	$(FC) $^ -o build/test/test_plane_with_hole.exe $(FLAGS)
+
+test_plane_with_hole: build/test/test_plane_with_hole.exe
+	./build/test/test_plane_with_hole.exe
+
+test: test_plane test_rectangle test_cylinder test_plane_with_hole build/test
+
+%.exe: lib/futils/build/lib/libfutils.a
 
 lib/futils/build/lib/libfutils.a:
 	make -C lib/futils builddir 
@@ -81,6 +102,7 @@ builddir:
 	-$(MKDIR) build\test\lib
 	-$(MKDIR) $(LIBRARY_TO_BUILD)
 	-$(MKDIR) $(INCLUDE)
+	mkdir -C lib/futils builddir
 
 clean:
 	-$(RM) $(PROGRAM)

@@ -29,7 +29,7 @@ contains
 
     pure function new_rectangleXYZ(axis, origin, w1, w2) result(obj)
         integer, intent(in) :: axis
-        double precision, intent(in) :: origin
+        double precision, intent(in) :: origin(3)
         double precision, intent(in) :: w1
         double precision, intent(in) :: w2
         type(t_RectangleXYZ) :: obj
@@ -41,7 +41,7 @@ contains
     end function
 
     pure function new_rectangleX(origin, wy, wz) result(obj)
-        double precision, intent(in) :: origin
+        double precision, intent(in) :: origin(3)
         !> The width in y-axis (= self%w1)
         double precision, intent(in) :: wy
         !> The width in z-axis (= self%w2)
@@ -52,7 +52,7 @@ contains
     end function
 
     pure function new_rectangleY(origin, wz, wx) result(obj)
-        double precision, intent(in) :: origin
+        double precision, intent(in) :: origin(3)
         !> The width in z-axis (= self%w1)
         double precision, intent(in) :: wz
         !> The width in x-axis (= self%w2)
@@ -63,7 +63,7 @@ contains
     end function
 
     pure function new_rectangleZ(origin, wx, wy) result(obj)
-        double precision, intent(in) :: origin
+        double precision, intent(in) :: origin(3)
         !> The width in x-axis (= self%w1)
         double precision, intent(in) :: wx
         !> The width in y-axis (= self%w2)
@@ -82,10 +82,14 @@ contains
         double precision :: d1, d2
         double precision :: r
         double precision :: pos_collided(3)
-        integer :: axis1, axis2
+        integer :: axis0, axis1, axis2
 
-        d1 = p1(self%axis) - self%origin(self%axis)
-        d2 = p2(self%axis) - self%origin(self%axis)
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        d1 = p1(axis0) - self%origin(axis0)
+        d2 = p2(axis0) - self%origin(axis0)
         if (d1*d2 >= 0) then
             record%is_collided = .false.
             return
@@ -94,8 +98,6 @@ contains
         r = abs(d1)/(abs(d1) + abs(d2))
         pos_collided = (p2 - p1)*r + p1
 
-        axis1 = mod(self%axis + 1, 3) + 1
-        axis2 = mod(self%axis + 2, 3) + 1
         if (pos_collided(axis1) < self%origin(axis1) &
             .or. self%origin(axis1) + self%w1 < pos_collided(axis1) &
             .or. pos_collided(axis2) < self%origin(axis2) &
@@ -117,22 +119,25 @@ contains
         integer :: axis0, axis1, axis2
 
         axis0 = self%axis
-        axis1 = mod(axis0 + 1, 3) + 1
-        axis2 = mod(axis0 + 2, 3) + 1
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
 
         if (self%origin(axis0) < sdoms(1, axis0) - 1 &
             .or. sdoms(2, axis0) + 1 < self%origin(axis0)) then
             is_overlap = .false.
+            return
         end if
 
         if (self%origin(axis1) + self%w1 < sdoms(1, axis1) - 1 &
             .or. sdoms(2, axis1) + 1 < self%origin(axis1)) then
             is_overlap = .false.
+            return
         end if
 
         if (self%origin(axis2) + self%w2 < sdoms(1, axis2) - 1 &
             .or. sdoms(2, axis2) + 1 < self%origin(axis2)) then
             is_overlap = .false.
+            return
         end if
 
         is_overlap = .true.

@@ -12,7 +12,7 @@ module m_cylinder_boundary
     !  |           |
     !  |           |
     !  |           |  height
-    !  |   r       |
+    !  |  r        |
     !  |-----.origin
     !  '.＿＿＿＿_.'  -> axis+1 or axis+2
     type, extends(t_Boundary) :: t_CylinderXYZ
@@ -28,6 +28,9 @@ module m_cylinder_boundary
     private
     public t_CylinderXYZ
     public new_cylinderXYZ
+    public new_cylinderX
+    public new_cylinderY
+    public new_cylinderZ
 
 contains
 
@@ -85,8 +88,8 @@ contains
         double precision :: pos_collided(3)
 
         axis0 = self%axis
-        axis1 = mod(self%axis + 1, 3) + 1
-        axis2 = mod(self%axis + 2, 3) + 1
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
 
         x1 = p1(axis1) - self%origin(axis1)
         y1 = p1(axis2) - self%origin(axis2)
@@ -134,8 +137,8 @@ contains
         integer :: axis0, axis1, axis2
 
         axis0 = self%axis
-        axis1 = mod(self%axis + 1, 3) + 1
-        axis2 = mod(self%axis + 2, 3) + 1
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
 
         if (self%origin(axis0) + self%height < sdoms(1, axis0) - 1 &
             .or. sdoms(2, axis0) + 1 < self%origin(axis0)) then

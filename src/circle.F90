@@ -69,10 +69,14 @@ contains
         double precision :: r
         double precision :: pos_collided(3)
         double precision :: r1, r2
-        integer :: axis1, axis2
+        integer :: axis0, axis1, axis2
 
-        d1 = p1(self%axis) - self%origin(self%axis)
-        d2 = p2(self%axis) - self%origin(self%axis)
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        d1 = p1(axis0) - self%origin(axis0)
+        d2 = p2(axis0) - self%origin(axis0)
         if (d1*d2 >= 0) then
             record%is_collided = .false.
             return
@@ -80,9 +84,6 @@ contains
 
         r = abs(d1)/(abs(d1) + abs(d2))
         pos_collided = (p2 - p1)*r + p1
-
-        axis1 = mod(self%axis + 1, 3) + 1
-        axis2 = mod(self%axis + 2, 3) + 1
 
         r1 = pos_collided(axis1) - self%origin(axis1)
         r2 = pos_collided(axis2) - self%origin(axis2)
@@ -104,8 +105,8 @@ contains
         integer :: axis0, axis1, axis2
 
         axis0 = self%axis
-        axis1 = mod(axis0 + 1, 3) + 1
-        axis2 = mod(axis0 + 2, 3) + 1
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
 
         if (self%origin(axis0) < sdoms(1, axis0) - 1 &
             .or. sdoms(2, axis0) + 1 < self%origin(axis0)) then

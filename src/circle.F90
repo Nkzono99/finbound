@@ -26,17 +26,17 @@ contains
 
     pure function new_CircleXYZ(axis, origin, radius) result(obj)
         integer, intent(in) :: axis
-        double precision, intent(in) :: origin
+        double precision, intent(in) :: origin(3)
         double precision, intent(in) :: radius
         type(t_CircleXYZ) :: obj
 
         obj%axis = axis
-        obj%origin = origin
+        obj%origin(1:3) = origin(1:3)
         obj%radius = radius
     end function
 
     pure function new_CircleX(origin, radius) result(obj)
-        double precision, intent(in) :: origin
+        double precision, intent(in) :: origin(3)
         double precision, intent(in) :: radius
         type(t_CircleXYZ) :: obj
 
@@ -44,7 +44,7 @@ contains
     end function
 
     pure function new_CircleY(origin, radius) result(obj)
-        double precision, intent(in) :: origin
+        double precision, intent(in) :: origin(3)
         double precision, intent(in) :: radius
         type(t_CircleXYZ) :: obj
 
@@ -52,7 +52,7 @@ contains
     end function
 
     pure function new_CircleZ(origin, radius) result(obj)
-        double precision, intent(in) :: origin
+        double precision, intent(in) :: origin(3)
         double precision, intent(in) :: radius
         type(t_CircleXYZ) :: obj
 

@@ -15,7 +15,6 @@ module m_circle_boundary
     end type
 
     private
-
     public t_CircleXYZ
     public new_CircleXYZ
     public new_CircleX

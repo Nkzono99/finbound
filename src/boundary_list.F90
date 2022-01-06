@@ -18,6 +18,7 @@ module m_boundary_list
         procedure :: add_boundary => boundaryList_add_boundary
 
         procedure, private :: extent_size => boundaryList_extent_size
+        procedure :: destroy => boundaryList_destroy
     end type
 
     private
@@ -101,6 +102,20 @@ contains
 
         self%nboundaries = self%nboundaries + 1
         self%boundaries(self%nboundaries)%ref => pboundary
+    end subroutine
+
+    subroutine boundaryList_destroy(self)
+        class(t_BoundaryList), intent(inout) :: self
+
+        integer :: i
+        
+        do i = 1, self%nboundaries
+            deallocate(self%boundaries(i)%ref)
+        end do
+
+        deallocate(self%boundaries)
+        self%nboundaries = 0
+        self%max_nboundaries = 0
     end subroutine
 
     subroutine boundaryList_extent_size(self)

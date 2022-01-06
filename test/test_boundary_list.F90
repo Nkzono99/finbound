@@ -43,6 +43,8 @@ contains
         else
             print *, "AssersionError: test add_boundary failed."
         end if
+
+        call list%destroy
     end subroutine
 
 end program

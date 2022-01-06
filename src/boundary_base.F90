@@ -41,6 +41,11 @@ module m_boundary_base
         procedure :: is_overlap => pboundary_is_overlap
     end type
 
+    private
+    public t_Boundary
+    public tp_Boundary
+    public t_CollisionRecord
+
 contains
 
     function record_to_string(self) result(ret)

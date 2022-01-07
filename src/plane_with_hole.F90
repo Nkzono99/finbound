@@ -77,7 +77,7 @@ contains
         r = abs(d1)/(abs(d1) + abs(d2))
         pos_collided = (p2 - p1)*r + p1
 
-        if (norm(pos_collided - self%origin) < self%radius) then
+        if (norm2(pos_collided - self%origin) < self%radius) then
             record%is_collided = .false.
             return
         end if

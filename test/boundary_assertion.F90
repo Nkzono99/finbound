@@ -1,6 +1,6 @@
 module m_boundary_assertion
     use m_boundary_base
-    use m_str
+    use futils, only : str
     implicit none
 
     private
@@ -50,14 +50,14 @@ contains
         end if
 
         if (present(position)) then
-            if (.not. all(record%position == position)) then
+            if (.not. sum(abs(record%position - position)) <= 0d0) then
                 print *, "AssertionError (position): "//message_
                 return
             end if
         end if
 
         if (present(t)) then
-            if (record%t /= t) then
+            if (abs(record%t - t) <= 0d0) then
                 print *, "AssertionError (t): "//message_
                 return
             end if

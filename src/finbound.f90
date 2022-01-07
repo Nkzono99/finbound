@@ -1,7 +1,8 @@
 module finbound
     use m_boundary_base, only: t_Boundary, &
                                tp_Boundary, &
-                               t_CollisionRecord
+                               t_CollisionRecord, &
+                               DEFAULT_DOMAIN_EXTENT
 
     use m_boundary_list, only: t_BoundaryList, new_BoundaryList
 

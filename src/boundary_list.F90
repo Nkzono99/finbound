@@ -75,15 +75,16 @@ contains
         end do
     end function
 
-    pure function boundaryList_is_overlap(self, sdoms) result(is_overlap)
+    pure function boundaryList_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_BoundaryList), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
+        double precision, intent(in), optional :: extent(2, 3)
         logical :: is_overlap
 
         integer :: i
 
         do i = 1, self%nboundaries
-            if (self%boundaries(i)%is_overlap(sdoms)) then
+            if (self%boundaries(i)%is_overlap(sdoms, extent)) then
                 is_overlap = .true.
                 return
             end if

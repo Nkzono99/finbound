@@ -1,5 +1,9 @@
 module m_boundary_base
+    use futils, only: str
     implicit none
+
+    double precision, parameter :: DEFAULT_DOMAIN_EXTENT(2, 3) = &
+        reshape([[1d0, 1d0], [1d0, 1d0], [1d0, 1d0]], [2, 3])
 
     type t_CollisionRecord
         logical :: is_collided = .false.
@@ -25,10 +29,11 @@ module m_boundary_base
             type(t_CollisionRecord) :: record
         end function
 
-        pure function boundary_is_overlap(self, sdoms) result(is_overlap)
+        pure function boundary_is_overlap(self, sdoms, extent) result(is_overlap)
             import t_Boundary
             class(t_Boundary), intent(in) :: self
             double precision, intent(in) :: sdoms(2, 3)
+            double precision, intent(in), optional :: extent(2, 3)
             logical :: is_overlap
         end function
     end interface
@@ -42,30 +47,25 @@ module m_boundary_base
     end type
 
     private
+    public DEFAULT_DOMAIN_EXTENT
     public t_Boundary
     public tp_Boundary
     public t_CollisionRecord
+    public get_default_extent
 
 contains
 
     function record_to_string(self) result(ret)
         class(t_CollisionRecord), intent(in) :: self
         character(len=50) :: ret
-        character(len=1) :: bool
-        character(len=8) :: x, y, z
-        character(len=8) :: t
 
-        if (self%is_collided) then
-            bool = 'T'
-        else
-            bool = 'F'
-        end if
-
-        write (x, '(f8.3)') self%position(1)
-        write (y, '(f8.3)') self%position(2)
-        write (z, '(f8.3)') self%position(3)
-        write(t, '(f8.3)') self%t
-        ret = 'Record('//bool//','//x//','//y//','//z//','//t//')'
+        ret = 'Record(' &
+              //str(self%is_collided)//',' &
+              //str(self%position(1))//',' &
+              //str(self%position(2))//',' &
+              //str(self%position(3))//',' &
+              //str(self%t) &
+              //')'
     end function
 
     pure function pboundary_check_collision(self, p1, p2) result(record)
@@ -77,12 +77,24 @@ contains
         record = self%ref%check_collision(p1, p2)
     end function
 
-    pure function pboundary_is_overlap(self, sdoms) result(is_overlap)
+    pure function pboundary_is_overlap(self, sdoms, extent) result(is_overlap)
         class(tp_Boundary), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
+        double precision, intent(in), optional :: extent(2, 3)
         logical :: is_overlap
 
-        is_overlap = self%ref%is_overlap(sdoms)
+        is_overlap = self%ref%is_overlap(sdoms, extent)
+    end function
+
+    pure function get_default_extent(extent) result(ret)
+        double precision, intent(in), optional :: extent(2, 3)
+        double precision :: ret(2, 3)
+
+        if (present(extent)) then
+            ret = extent
+        else
+            ret = DEFAULT_DOMAIN_EXTENT
+        end if
     end function
 
 end module

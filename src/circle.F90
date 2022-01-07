@@ -96,29 +96,37 @@ contains
         record%position = pos_collided
     end function
 
-    pure function circleXYZ_is_overlap(self, sdoms) result(is_overlap)
+    pure function circleXYZ_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_circleXYZ), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
+        double precision, intent(in), optional :: extent(2, 3)
         logical :: is_overlap
 
         integer :: axis0, axis1, axis2
+
+        double precision :: extent_(2, 3)
+        double precision :: sdoms_(2, 3)
+
+        extent_ = get_default_extent(extent)
+        sdoms_(1, :) = sdoms(1, :) - extent_(1, :)
+        sdoms_(2, :) = sdoms(2, :) - extent_(2, :)
 
         axis0 = self%axis
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
 
-        if (self%origin(axis0) < sdoms(1, axis0) - 1 &
-            .or. sdoms(2, axis0) + 1 < self%origin(axis0)) then
+        if (self%origin(axis0) < sdoms(1, axis0) &
+            .or. sdoms(2, axis0) < self%origin(axis0)) then
             is_overlap = .false.
         end if
 
-        if (self%origin(axis1) + self%radius < sdoms(1, axis1) - 1 &
-            .or. sdoms(2, axis1) + 1 < self%origin(axis1)) then
+        if (self%origin(axis1) + self%radius < sdoms(1, axis1) &
+            .or. sdoms(2, axis1) < self%origin(axis1)) then
             is_overlap = .false.
         end if
 
-        if (self%origin(axis2) + self%radius < sdoms(1, axis2) - 1 &
-            .or. sdoms(2, axis2) + 1 < self%origin(axis2)) then
+        if (self%origin(axis2) + self%radius < sdoms(1, axis2) &
+            .or. sdoms(2, axis2) < self%origin(axis2)) then
             is_overlap = .false.
         end if
 

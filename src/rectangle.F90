@@ -111,31 +111,39 @@ contains
         record%position = pos_collided
     end function
 
-    pure function rectangleXYZ_is_overlap(self, sdoms) result(is_overlap)
+    pure function rectangleXYZ_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_RectangleXYZ), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
+        double precision, intent(in), optional :: extent(2, 3)
         logical :: is_overlap
 
+        double precision :: extent_(2, 3)
+        double precision :: sdoms_(2, 3)
+
         integer :: axis0, axis1, axis2
+
+        extent_ = get_default_extent(extent)
+        sdoms_(1, :) = sdoms(1, :) - extent_(1, :)
+        sdoms_(2, :) = sdoms(2, :) + extent_(2, :)
 
         axis0 = self%axis
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
 
-        if (self%origin(axis0) < sdoms(1, axis0) - 1 &
-            .or. sdoms(2, axis0) + 1 < self%origin(axis0)) then
+        if (self%origin(axis0) < sdoms_(1, axis0) &
+            .or. sdoms_(2, axis0) < self%origin(axis0)) then
             is_overlap = .false.
             return
         end if
 
-        if (self%origin(axis1) + self%w1 < sdoms(1, axis1) - 1 &
-            .or. sdoms(2, axis1) + 1 < self%origin(axis1)) then
+        if (self%origin(axis1) + self%w1 < sdoms_(1, axis1) &
+            .or. sdoms_(2, axis1) < self%origin(axis1)) then
             is_overlap = .false.
             return
         end if
 
-        if (self%origin(axis2) + self%w2 < sdoms(1, axis2) - 1 &
-            .or. sdoms(2, axis2) + 1 < self%origin(axis2)) then
+        if (self%origin(axis2) + self%w2 < sdoms_(1, axis2) &
+            .or. sdoms_(2, axis2) < self%origin(axis2)) then
             is_overlap = .false.
             return
         end if

@@ -63,23 +63,29 @@ contains
         record%position = (p2 - p1)*r + p1
     end function
 
-    pure function plane_is_overlap(self, sdoms) result(is_overlap)
+    pure function plane_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_Plane), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
+        double precision, intent(in), optional :: extent(2, 3)
         logical :: is_overlap
 
         double precision :: d
         double precision :: pos(3)
         integer :: i, j, k
 
-        pos = [sdoms(1, 1) - 1, sdoms(1, 2) - 1, sdoms(1, 3) - 1]
+        double precision :: extent_(2, 3)
+        double precision :: sdoms_(2, 3)
+
+        extent_ = get_default_extent(extent)
+        sdoms_(1, :) = sdoms(1, :) - extent_(1, :)
+        sdoms_(2, :) = sdoms(2, :) + extent_(2, :)
+
+        pos = [sdoms_(1, 1), sdoms_(1, 2), sdoms_(1, 3)]
         d = dot(pos - self%origin, self%perp)
         do i = 1, 2
             do j = 1, 2
                 do k = 1, 2
-                    pos = [sdoms(i, 1) + (i - 1.5d0)*2.0d0, &
-                           sdoms(j, 2) + (j - 1.5d0)*2.0d0, &
-                           sdoms(k, 3) + (k - 1.5d0)*2.0d0]
+                    pos = [sdoms_(i, 1), sdoms_(j, 2), sdoms_(k, 3)]
                     if (d*dot(pos - self%origin, self%perp) < 0.0d0) then
                         is_overlap = .true.
                         return
@@ -146,13 +152,18 @@ contains
         record%position = pos_collided
     end function
 
-    pure function planeXYZ_is_overlap(self, sdoms) result(is_overlap)
+    pure function planeXYZ_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_PlaneXYZ), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
+        double precision, intent(in), optional :: extent(2, 3)
         logical :: is_overlap
 
-        is_overlap = sdoms(1, self%axis) - 1 <= self%pos &
-                   .and. self%pos <= sdoms(2, self%axis) + 1
+        double precision :: extent_(2, 3)
+
+        extent_ = get_default_extent(extent)
+
+        is_overlap = sdoms(1, self%axis) - extent_(1, self%axis) <= self%pos &
+                   .and. self%pos <= sdoms(2, self%axis) + extent_(2, self%axis)
     end function
 
 end module

@@ -87,12 +87,17 @@ contains
         record%position = pos_collided
     end function
 
-    pure function planeXYZWithCircleHole_is_overlap(self, sdoms) result(is_overlap)
+    pure function planeXYZWithCircleHole_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_PlaneXYZWithCircleHole), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
+        double precision, intent(in), optional :: extent(2, 3)
         logical :: is_overlap
 
-        is_overlap = sdoms(1, self%axis) - 1 <= self%origin(self%axis) &
-                   .and. self%origin(self%axis) <= sdoms(2, self%axis) + 1
+        double precision :: extent_(2, 3)
+
+        extent_ = get_default_extent(extent)
+
+        is_overlap = sdoms(1, self%axis) - extent_(1, self%axis) <= self%origin(self%axis) &
+                   .and. self%origin(self%axis) <= sdoms(2, self%axis) + extent_(2, self%axis)
     end function
 end module

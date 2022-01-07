@@ -8,6 +8,6 @@
         "-Wall",
         "-I${workspaceFolder}/src",
         "-I${workspaceFolder}/test",
-        "-I${workspaceFolder}/lib/futils/src"
+        "-I${workspaceFolder}/build/dependencies/futils/src",
     ],
 }

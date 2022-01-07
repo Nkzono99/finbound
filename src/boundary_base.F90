@@ -57,7 +57,7 @@ contains
 
     function record_to_string(self) result(ret)
         class(t_CollisionRecord), intent(in) :: self
-        character(len=50) :: ret
+        character(len=100) :: ret
 
         ret = 'Record(' &
               //str(self%is_collided)//',' &

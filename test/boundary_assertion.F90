@@ -36,7 +36,7 @@ contains
         double precision, intent(in), optional :: t
         character(len=*), intent(in), optional :: message
         ! character, allocatable :: message_(:)
-        character(len=50) :: message_
+        character(len=100) :: message_
 
         if (present(message)) then
             message_ = message
@@ -57,7 +57,7 @@ contains
         end if
 
         if (present(t)) then
-            if (abs(record%t - t) <= 0d0) then
+            if (abs(record%t-t) > 0d0) then
                 print *, "AssertionError (t): "//message_
                 return
             end if

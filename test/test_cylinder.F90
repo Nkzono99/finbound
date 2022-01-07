@@ -73,35 +73,39 @@ contains
         double precision :: origin(3)
         double precision :: sdoms(2, 3)
 
-        ! X: W  |  W
-        origin = [1.0d0, 1.0d0, 1.0d0]
-        cylinder = new_cylinderX(origin, 1.0d0, 5.0d0)
-        sdoms = reshape([[0.0d0, 1.0d0], [0.0d0, 1.0d0], [0.0d0, 1.0d0]], [2, 3])
-        call assert_logical(cylinder%is_overlap(sdoms), .true.)
+        double precision :: extent(2, 3)
 
-        ! X: W W |
-        origin = [1.0d0, 1.0d0, 1.0d0]
-        cylinder = new_cylinderX(origin, 1.0d0, 5.0d0)
-        sdoms = reshape([[-2.0d0, -1.0d0], [0.0d0, 1.0d0], [0.0d0, 1.0d0]], [2, 3])
-        call assert_logical(cylinder%is_overlap(sdoms), .false.)
+        extent = reshape([[0, 0], [0, 0], [0, 0]], [2, 3])
 
-        ! X: | W W
+        ! Z: W--|--|--W
         origin = [1.0d0, 1.0d0, 1.0d0]
-        cylinder = new_cylinderX(origin, 1.0d0, 5.0d0)
-        sdoms = reshape([[3.0d0, 4.0d0], [0.0d0, 1.0d0], [0.0d0, 1.0d0]], [2, 3])
-        call assert_logical(cylinder%is_overlap(sdoms), .false.)
+        cylinder = new_cylinderZ(origin, 1.0d0, 5.0d0)
+        sdoms = reshape([[-1.0d0, 3.0d0], [0.0d0, 2.0d0], [0.0d0, 2.0d0]], [2, 3])
+        call assert_logical(cylinder%is_overlap(sdoms, extent=extent), .true.)
 
-        ! Y: W  |  W
+        ! Z: W-W | |
         origin = [1.0d0, 1.0d0, 1.0d0]
-        cylinder = new_cylinderX(origin, 1.0d0, 5.0d0)
-        sdoms = reshape([[0.0d0, 1.0d0], [0.0d0, 1.0d0], [0.0d0, 1.0d0]], [2, 3])
-        call assert_logical(cylinder%is_overlap(sdoms), .true.)
+        cylinder = new_cylinderZ(origin, 1.0d0, 5.0d0)
+        sdoms = reshape([[-2.0d0, -1.0d0], [0.0d0, 2.0d0], [0.0d0, 2.0d0]], [2, 3])
+        call assert_logical(cylinder%is_overlap(sdoms, extent=extent), .false.)
 
-        ! Y: W W |
+        ! Z: | | W-W
         origin = [1.0d0, 1.0d0, 1.0d0]
-        cylinder = new_cylinderX(origin, 1.0d0, 5.0d0)
-        sdoms = reshape([[0.0d0, 1.0d0], [-2.0d0, -1.0d0], [0.0d0, 1.0d0]], [2, 3])
-        call assert_logical(cylinder%is_overlap(sdoms), .false.)
+        cylinder = new_cylinderZ(origin, 1.0d0, 5.0d0)
+        sdoms = reshape([[3.0d0, 4.0d0], [0.0d0, 2.0d0], [0.0d0, 2.0d0]], [2, 3])
+        call assert_logical(cylinder%is_overlap(sdoms, extent=extent), .false.)
+
+        ! Y: W--|--|--W
+        origin = [1.0d0, 1.0d0, 1.0d0]
+        cylinder = new_cylinderY(origin, 1.0d0, 5.0d0)
+        sdoms = reshape([[-1.0d0, 3.0d0], [0.0d0, 2.0d0], [0.0d0, 2.0d0]], [2, 3])
+        call assert_logical(cylinder%is_overlap(sdoms, extent=extent), .true.)
+
+        ! Y: W-W | |
+        origin = [1.0d0, 1.0d0, 1.0d0]
+        cylinder = new_cylinderZ(origin, 1.0d0, 5.0d0)
+        sdoms = reshape([[-2.0d0, -1.0d0], [0.0d0, 2.0d0], [0.0d0, 2.0d0]], [2, 3])
+        call assert_logical(cylinder%is_overlap(sdoms, extent=extent), .false.)
     end subroutine
 
 end program

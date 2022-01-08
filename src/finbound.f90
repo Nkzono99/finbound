@@ -37,5 +37,19 @@ module finbound
                                           new_planeXYZWithCircleHoleX, &
                                           new_planeXYZWithCircleHoleY, &
                                           new_planeXYZWithCircleHoleZ
+
+    use m_boundary_rotation, only: t_BoundaryRotationXYZ, &
+                                   new_BoundaryRotationXYZ, &
+                                   new_BoundaryRotationX, &
+                                   new_BoundaryRotationY, &
+                                   new_BoundaryRotationZ
+
+    use m_sphere_boundary, only: t_Sphere, &
+                                 new_Sphere, &
+                                 t_CutSphereXYZ, &
+                                 new_CutSphereX, &
+                                 new_CutSphereY, &
+                                 new_CutSphereZ
+
     implicit none
 end module finbound

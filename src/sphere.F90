@@ -50,7 +50,7 @@ contains
         double precision :: pos_collided(3)
 
         double precision :: a, b, c
-        double precision :: d2, d
+        double precision :: d2
         double precision :: r
 
         q1 = p1 - self%origin
@@ -66,11 +66,16 @@ contains
             return
         end if
 
-        d = sqrt(d2)
-        r = (-b - d)/a
-        if (r < 0.0d0 .or. 1.0d0 < r) then
-            r = (-b + d)/a
-        end if
+        block
+            double precision :: d
+            d = sqrt(d2)
+
+            r = (-b - d)/a
+            if (r < 0.0d0 .or. 1.0d0 < r) then
+                r = (-b + d)/a
+            end if
+        end block
+
         if (r < 0.0d0 .or. 1.0d0 < r) then
             record%is_collided = .false.
             return
@@ -124,16 +129,16 @@ contains
         end if
 
         do i = 1, 2
-        do j = 1, 2
-        do k = 1, 2
-            pos = [sdoms_(i, 1), sdoms_(j, 2), sdoms_(k, 3)]
-            corner_in_shpere = norm2(pos - self%origin) <= self%radius
-            if (corner_in_shpere) then
-                is_overlap = .true.
-                return
-            end if
-        end do
-        end do
+            do j = 1, 2
+                do k = 1, 2
+                    pos = [sdoms_(i, 1), sdoms_(j, 2), sdoms_(k, 3)]
+                    corner_in_shpere = norm2(pos - self%origin) <= self%radius
+                    if (corner_in_shpere) then
+                        is_overlap = .true.
+                        return
+                    end if
+                end do
+            end do
         end do
 
         is_overlap = .false.
@@ -141,7 +146,7 @@ contains
 
     function new_CutSphereXYZ(origin, radius, axis, lower, upper) result(obj)
         double precision, intent(in) :: origin(3)
-        double precision ,intent(in) :: radius
+        double precision, intent(in) :: radius
         integer, intent(in) :: axis
         double precision, intent(in) :: lower
         double precision, intent(in) :: upper
@@ -156,7 +161,7 @@ contains
 
     function new_CutSphereX(origin, radius, lower, upper) result(obj)
         double precision, intent(in) :: origin(3)
-        double precision ,intent(in) :: radius
+        double precision, intent(in) :: radius
         double precision, intent(in) :: lower
         double precision, intent(in) :: upper
         type(t_CutSphereXYZ) :: obj
@@ -166,7 +171,7 @@ contains
 
     function new_CutSphereY(origin, radius, lower, upper) result(obj)
         double precision, intent(in) :: origin(3)
-        double precision ,intent(in) :: radius
+        double precision, intent(in) :: radius
         double precision, intent(in) :: lower
         double precision, intent(in) :: upper
         type(t_CutSphereXYZ) :: obj
@@ -176,7 +181,7 @@ contains
 
     function new_CutSphereZ(origin, radius, lower, upper) result(obj)
         double precision, intent(in) :: origin(3)
-        double precision ,intent(in) :: radius
+        double precision, intent(in) :: radius
         double precision, intent(in) :: lower
         double precision, intent(in) :: upper
         type(t_CutSphereXYZ) :: obj

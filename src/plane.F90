@@ -71,7 +71,7 @@ contains
 
         double precision :: d
         double precision :: pos(3)
-        integer :: i, j, k
+        integer :: ix, iy, iz
 
         double precision :: extent_(2, 3)
         double precision :: sdoms_(2, 3)
@@ -82,10 +82,10 @@ contains
 
         pos = [sdoms_(1, 1), sdoms_(1, 2), sdoms_(1, 3)]
         d = dot(pos - self%origin, self%perp)
-        do i = 1, 2
-            do j = 1, 2
-                do k = 1, 2
-                    pos = [sdoms_(i, 1), sdoms_(j, 2), sdoms_(k, 3)]
+        do ix = 1, 2
+            do iy = 1, 2
+                do iz = 1, 2
+                    pos = [sdoms_(ix, 1), sdoms_(iy, 2), sdoms_(iz, 3)]
                     if (d*dot(pos - self%origin, self%perp) < 0.0d0) then
                         is_overlap = .true.
                         return

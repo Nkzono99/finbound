@@ -81,9 +81,8 @@ contains
         type(t_CollisionRecord) :: record
 
         integer :: axis0, axis1, axis2
-        double precision :: x1, y1, x2, y2
         double precision :: a, b, c
-        double precision :: d, d2
+        double precision :: d2
         double precision :: r
         double precision :: pos_collided(3)
 
@@ -91,14 +90,17 @@ contains
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
 
-        x1 = p1(axis1) - self%origin(axis1)
-        y1 = p1(axis2) - self%origin(axis2)
-        x2 = p2(axis1) - self%origin(axis1)
-        y2 = p2(axis2) - self%origin(axis2)
+        block
+            double precision :: x1, y1, x2, y2
+            x1 = p1(axis1) - self%origin(axis1)
+            y1 = p1(axis2) - self%origin(axis2)
+            x2 = p2(axis1) - self%origin(axis1)
+            y2 = p2(axis2) - self%origin(axis2)
 
-        a = x1*x1 + y1*y1 + x2*x2 + y2*y2 - 2*x1*x2 - 2*y1*y2
-        b = x1*x2 + y1*y2 - x1*x1 - y1*y1
-        c = x1*x1 + y1*y1 - self%radius*self%radius
+            a = x1*x1 + y1*y1 + x2*x2 + y2*y2 - 2*x1*x2 - 2*y1*y2
+            b = x1*x2 + y1*y2 - x1*x1 - y1*y1
+            c = x1*x1 + y1*y1 - self%radius*self%radius
+        end block
 
         d2 = b*b - a*c
         if (d2 < 0.0d0) then
@@ -106,11 +108,16 @@ contains
             return
         end if
 
-        d = sqrt(d2)
-        r = (-b - d)/a
-        if (r < 0.0d0 .or. 1.0d0 < r) then
-            r = (-b + d)/a
-        end if
+        block
+            double precision :: d
+            d = sqrt(d2)
+
+            r = (-b - d)/a
+            if (r < 0.0d0 .or. 1.0d0 < r) then
+                r = (-b + d)/a
+            end if
+        end block
+
         if (r < 0.0d0 .or. 1.0d0 < r) then
             record%is_collided = .false.
             return

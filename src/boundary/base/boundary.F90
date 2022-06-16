@@ -1,5 +1,6 @@
 module m_boundary
     use futils, only: str, dot
+    use m_material
     use m_ray
     implicit none
 
@@ -10,11 +11,13 @@ module m_boundary
         logical :: is_collided = .false.
         double precision :: position(3)
         double precision :: t = -1.0d0
+        type(t_Material) :: material
     contains
         procedure :: to_string => record_to_string
     end type
 
     type, abstract :: t_Boundary
+        type(t_Material) :: material
     contains
         procedure(boundary_check_collision), deferred :: check_collision
         procedure(boundary_hit), deferred :: hit

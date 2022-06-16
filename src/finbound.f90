@@ -1,4 +1,5 @@
 module finbound
+    use m_material, only: t_Material
     use m_boundary, only: t_Boundary, &
                           tp_Boundary, &
                           t_CollisionRecord, &

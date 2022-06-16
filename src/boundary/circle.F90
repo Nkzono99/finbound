@@ -97,6 +97,7 @@ contains
         record%is_collided = .true.
         record%t = r
         record%position = pos_collided
+        record%material = self%material
     end function
 
     pure function circleXYZ_hit(self, ray) result(hit_record)
@@ -135,6 +136,7 @@ contains
         hit_record%t = t_hit
         hit_record%position(:) = pos_hit(:)
         hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+        hit_record%material = self%material
     end function
 
     pure function circleXYZ_is_overlap(self, sdoms, extent) result(is_overlap)

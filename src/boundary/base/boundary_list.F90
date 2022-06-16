@@ -1,5 +1,6 @@
 module m_boundary_list
-    use m_boundary_base
+    use m_boundary
+    use m_ray
     implicit none
 
     integer, parameter :: DEFAULT_MAX_NBOUNDARIES = 30
@@ -14,6 +15,8 @@ module m_boundary_list
     contains
         procedure :: check_collision => boundaryList_check_collision
         procedure :: is_overlap => boundaryList_is_overlap
+        procedure :: pnormal => boundaryList_pnormal
+        procedure :: hit => boundaryList_hit
 
         procedure :: add_boundary => boundaryList_add_boundary
 
@@ -75,6 +78,31 @@ contains
         end do
     end function
 
+    pure function boundaryList_hit(self, ray) result(hit_record)
+        class(t_BoundaryList), intent(in) :: self
+        type(t_Ray), intent(in) :: ray
+        type(t_HitRecord) :: hit_record
+
+        integer :: i
+        type(t_HitRecord) :: tmp_hit_record
+
+        if (self%nboundaries == 0) then
+            hit_record%is_hit = .false.
+            return
+        end if
+
+        hit_record%is_hit = .false.
+        hit_record%t = 1e30
+
+        do i = 1, self%nboundaries
+            tmp_hit_record = self%boundaries(i)%hit(ray)
+            if (tmp_hit_record%is_hit &
+                .and. tmp_hit_record%t < hit_record%t) then
+                hit_record = tmp_hit_record
+            end if
+        end do
+    end function
+
     pure function boundaryList_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_BoundaryList), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
@@ -93,6 +121,17 @@ contains
         is_overlap = .false.
     end function
 
+    !> Do not use this function and boundaryList%normal.
+    !> Use the functions of the respective Boundary class,
+    !> since t_BoudnaryList does not support normal vector calculations.
+    pure function boundaryList_pnormal(self, position) result(pnormal)
+        class(t_BoundaryList), intent(in) :: self
+        double precision, intent(in) :: position(3)
+        double precision :: pnormal(3)
+
+        pnormal(:) = self%boundaries(1)%pnormal(position(:))
+    end function
+
     subroutine boundaryList_add_boundary(self, pboundary)
         class(t_BoundaryList), intent(inout) :: self
         class(t_Boundary), pointer, intent(in) :: pboundary
@@ -109,12 +148,12 @@ contains
         class(t_BoundaryList), intent(inout) :: self
 
         integer :: i
-        
+
         do i = 1, self%nboundaries
-            deallocate(self%boundaries(i)%ref)
+            deallocate (self%boundaries(i)%ref)
         end do
 
-        deallocate(self%boundaries)
+        deallocate (self%boundaries)
         self%nboundaries = 0
         self%max_nboundaries = 0
     end subroutine

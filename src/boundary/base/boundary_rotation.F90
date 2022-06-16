@@ -1,5 +1,6 @@
 module m_boundary_rotation
-    use m_boundary_base
+    use m_boundary
+    use m_ray
     use m_vector
     implicit none
 
@@ -10,7 +11,9 @@ module m_boundary_rotation
         double precision :: origin(3)
     contains
         procedure :: check_collision => boundaryRotation_check_collision
+        procedure :: hit => boundaryRotation_hit
         procedure :: is_overlap => boundaryRotation_is_overlap
+        procedure :: pnormal => boundaryRotation_pnormal
 
         procedure, private :: forward => boundaryRotation_forward
         procedure, private :: backward => boundaryRotation_backward
@@ -48,7 +51,7 @@ contains
         double precision, intent(in) :: rotation_rad
         double precision, intent(in), optional :: origin(3)
         type(t_BoundaryRotationXYZ) :: obj
-        
+
         obj = new_BoundaryRotationXYZ(pboundary, 1, rotation_rad, origin)
     end function
 
@@ -57,7 +60,7 @@ contains
         double precision, intent(in) :: rotation_rad
         double precision, intent(in), optional :: origin(3)
         type(t_BoundaryRotationXYZ) :: obj
-        
+
         obj = new_BoundaryRotationXYZ(pboundary, 2, rotation_rad, origin)
     end function
 
@@ -66,7 +69,7 @@ contains
         double precision, intent(in) :: rotation_rad
         double precision, intent(in), optional :: origin(3)
         type(t_BoundaryRotationXYZ) :: obj
-        
+
         obj = new_BoundaryRotationXYZ(pboundary, 3, rotation_rad, origin)
     end function
 
@@ -88,6 +91,30 @@ contains
         end if
     end function
 
+    pure function boundaryRotation_hit(self, ray) result(hit_record)
+        class(t_BoundaryRotationXYZ), intent(in) :: self
+        type(t_Ray), intent(in) :: ray
+        type(t_HitRecord) :: hit_record
+
+        type(t_Ray) :: ray_rotated
+        double precision :: to(3)
+
+        ! Converts to rotational coordinate system.
+        to(:) = ray%origin(:) + ray%direction(:)
+        ray_rotated%origin(:) = self%forward(ray%origin(:))
+        to(:) = self%forward(to(:))
+        ray_rotated%direction(:) = to(:) - ray_rotated%origin(:)
+
+        ! Ray at.
+        hit_record = self%pboundary%hit(ray_rotated)
+
+        ! Inverse converts from rotational coordinate system.
+        to(:) = hit_record%position(:) + hit_record%n(:)
+        hit_record%position(:) = self%backward(hit_record%position(:))
+        to(:) = self%backward(to(:))
+        hit_record%n(:) = to(:) - hit_record%position(:)
+    end function
+
     pure function boundaryRotation_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_BoundaryRotationXYZ), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
@@ -105,6 +132,22 @@ contains
         sdoms_(2, :) = self%forward(sdoms_(2, :))
 
         is_overlap = self%pboundary%is_overlap(sdoms)
+    end function
+
+    pure function boundaryRotation_pnormal(self, position) result(pnormal)
+        class(t_BoundaryRotationXYZ), intent(in) :: self
+        double precision, intent(in) :: position(3)
+        double precision :: pnormal(3)
+
+        double precision :: p(3), pn(3), pnn(3), pnb(3)
+
+        p(:) = self%forward(position)
+
+        pn(:) = self%pboundary%pnormal(p(:))
+        pnn(:) = p(:) + pn(:)
+
+        pnb(:) = self%backward(pnn(:))
+        pnormal(:) = pnn(:) - position(:)
     end function
 
     pure function boundaryRotation_forward(self, p) result(q)

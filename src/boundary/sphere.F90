@@ -8,7 +8,9 @@ module m_sphere_boundary
         double precision :: radius
     contains
         procedure :: check_collision => sphere_check_collision
+        procedure :: hit => sphere_hit
         procedure :: is_overlap => shpere_is_overlap
+        procedure :: pnormal => shpere_pnormal
     end type
 
     type, extends(t_Sphere) :: t_CutSphereXYZ
@@ -17,7 +19,9 @@ module m_sphere_boundary
         double precision :: upper
     contains
         procedure :: check_collision => cutSphereXYZ_check_collision
+        procedure :: hit => cutSphere_hit
         procedure :: is_overlap => cutSphereXYZ_is_overlap
+        procedure :: pnormal => cutShpereXYZ_pnormal
     end type
 
     private
@@ -88,6 +92,55 @@ contains
         record%position = pos_collided
     end function
 
+    pure function sphere_hit(self, ray) result(hit_record)
+        class(t_Sphere), intent(in) :: self
+        type(t_Ray), intent(in) :: ray
+        type(t_HitRecord) :: hit_record
+
+        double precision :: pos_hit(3)
+
+        double precision :: q1(3), q2(3)
+
+        double precision :: a, b, c
+        double precision :: d2
+        double precision :: t
+
+        q1(:) = ray%origin(:) - self%origin(:)
+        q2(:) = (ray%origin(:) + ray%direction(:)) - self%origin(:)
+
+        a = sum(q1*q1 + q2*q2) - 2*sum(q1*q2)
+        b = sum(q1*q2) - sum(q1*q1)
+        c = sum(q1*q1) - self%radius*self%radius
+
+        d2 = b*b - a*c
+        if (d2 < 0) then
+            hit_record%is_hit = .false.
+            return
+        end if
+
+        block
+            double precision :: d
+            d = sqrt(d2)
+
+            t = (-b - d)/a
+            if (t < 0.0d0) then
+                t = (-b + d)/a
+            end if
+        end block
+
+        if (t < 0.0d0) then
+            hit_record%is_hit = .false.
+            return
+        end if
+
+        pos_hit(:) = ray%origin(:) + ray%direction(:)*t
+
+        hit_record%is_hit = .true.
+        hit_record%t = t
+        hit_record%position(:) = pos_hit(:)
+        hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+    end function
+
     pure function shpere_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_Sphere), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
@@ -144,6 +197,14 @@ contains
         is_overlap = .false.
     end function
 
+    pure function shpere_pnormal(self, position) result(pnormal)
+        class(t_Sphere), intent(in) :: self
+        double precision, intent(in) :: position(3)
+        double precision :: pnormal(3)
+
+        pnormal(:) = normalized(position(:) - self%origin(:))
+    end function
+
     function new_CutSphereXYZ(origin, radius, axis, lower, upper) result(obj)
         double precision, intent(in) :: origin(3)
         double precision, intent(in) :: radius
@@ -195,16 +256,111 @@ contains
         double precision, intent(in) :: p2(3)
         type(t_CollisionRecord) :: record
 
-        record = sphere_check_collision(self, p1, p2)
-        if (.not. record%is_collided) then
-            return
-        end if
+        double precision :: pos_collided(3)
 
-        if (record%position(self%axis) < self%lower &
-            .or. self%upper < record%position(self%axis)) then
+        double precision :: q1(3), q2(3)
+        double precision :: a, b, c
+        double precision :: d2, d
+        double precision :: t
+
+        q1(:) = p1(:) - self%origin(:)
+        q2(:) = p2(:) - self%origin(:)
+
+        a = sum(q1*q1 + q2*q2) - 2*sum(q1*q2)
+        b = sum(q1*q2) - sum(q1*q1)
+        c = sum(q1*q1) - self%radius*self%radius
+
+        d2 = b*b - a*c
+        if (d2 < 0) then
             record%is_collided = .false.
             return
         end if
+
+        d = sqrt(d2)
+        t = (-b - d)/a
+        if (0d0 <= t .and. t <= 1.0d0) then
+            pos_collided(:) = (p2(:) - p1(:))*t + p1(:)
+
+            if (self%lower <= pos_collided(self%axis) &
+                .and. pos_collided(self%axis) <= self%upper) then
+                record%is_collided = .true.
+                record%position(:) = pos_collided(:)
+                record%t = t
+                return
+            end if
+        end if
+
+        t = (-b + d)/a
+        if (0d0 <= t .and. t <= 1.0d0) then
+            pos_collided(:) = (p2(:) - p1(:))*t + p1(:)
+
+            if (self%lower <= pos_collided(self%axis) &
+                .and. pos_collided(self%axis) <= self%upper) then
+                record%is_collided = .true.
+                record%position(:) = pos_collided(:)
+                record%t = t
+                return
+            end if
+        end if
+
+        record%is_collided = .false.
+    end function
+
+    pure function cutSphere_hit(self, ray) result(hit_record)
+        class(t_CutSphereXYZ), intent(in) :: self
+        type(t_Ray), intent(in) :: ray
+        type(t_HitRecord) :: hit_record
+
+        double precision :: pos_hit(3)
+
+        double precision :: q1(3), q2(3)
+        double precision :: a, b, c
+        double precision :: d2, d
+        double precision :: t
+
+        q1(:) = ray%origin(:) - self%origin(:)
+        q2(:) = (ray%origin(:) + ray%direction(:)) - self%origin(:)
+
+        a = sum(q1*q1 + q2*q2) - 2*sum(q1*q2)
+        b = sum(q1*q2) - sum(q1*q1)
+        c = sum(q1*q1) - self%radius*self%radius
+
+        d2 = b*b - a*c
+        if (d2 < 0) then
+            hit_record%is_hit = .false.
+            return
+        end if
+
+        d = sqrt(d2)
+        t = (-b - d)/a
+        if (t >= 0.0d0) then
+            pos_hit(:) = ray%origin(:) + ray%direction(:)*t
+
+            if (self%lower <= pos_hit(self%axis) &
+                .and. pos_hit(self%axis) <= self%upper) then
+                hit_record%is_hit = .true.
+                hit_record%position(:) = pos_hit(:)
+                hit_record%t = t
+                hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                return
+            end if
+        end if
+
+        t = (-b + d)/a
+        if (t >= 0.0d0) then
+            pos_hit(:) = ray%origin(:) + ray%direction(:)*t
+
+            if (self%lower <= pos_hit(self%axis) &
+                .and. pos_hit(self%axis) <= self%upper) then
+                hit_record%is_hit = .true.
+                hit_record%position(:) = pos_hit(:)
+                hit_record%t = t
+                hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                return
+            end if
+        end if
+
+        hit_record%is_hit = .false.
     end function
 
     pure function cutSphereXYZ_is_overlap(self, sdoms, extent) result(is_overlap)
@@ -227,6 +383,14 @@ contains
         end if
 
         is_overlap = shpere_is_overlap(self, sdoms_)
+    end function
+
+    pure function cutShpereXYZ_pnormal(self, position) result(pnormal)
+        class(t_CutSphereXYZ), intent(in) :: self
+        double precision, intent(in) :: position(3)
+        double precision :: pnormal(3)
+
+        pnormal(:) = normalized(position(:) - self%origin(:))
     end function
 
 end module

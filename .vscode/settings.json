@@ -1,12 +1,11 @@
 {
-    "fortran.includePaths": [
-        "${workspaceFolder}/src"
-    ],
     "fortran-ls.lowercaseIntrinsics": true,
     "fortran.formatting.formatter": "fprettify",
-    "fortran.linterExtraArgs": [
+    "fortran.linter.extraArgs": [
         "-Wall",
         "-I${workspaceFolder}/src",
+        "-I${workspaceFolder}/src/boundary",
+        "-I${workspaceFolder}/src/boundary/base",
         "-I${workspaceFolder}/test",
         "-I${workspaceFolder}/build/dependencies/futils/src",
     ],

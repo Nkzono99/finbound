@@ -1,8 +1,8 @@
 module finbound
-    use m_boundary_base, only: t_Boundary, &
-                               tp_Boundary, &
-                               t_CollisionRecord, &
-                               DEFAULT_DOMAIN_EXTENT
+    use m_boundary, only: t_Boundary, &
+                          tp_Boundary, &
+                          t_CollisionRecord, &
+                          DEFAULT_DOMAIN_EXTENT
 
     use m_boundary_list, only: t_BoundaryList, new_BoundaryList
 
@@ -51,5 +51,23 @@ module finbound
                                  new_CutSphereY, &
                                  new_CutSphereZ
 
+    use m_hyperboloid_boundary, only: t_HyperboloidXYZ, &
+                                      new_hyperboloidXYZ, &
+                                      new_hyperboloidX, &
+                                      new_hyperboloidY, &
+                                      new_HyperboloidZ
+
+    use m_ray, only: t_Ray, &
+                     new_Ray, &
+                     t_HitRecord
+
+    use m_camera, only: t_ParallelCamera, &
+                        new_ParallelCamera
+
     implicit none
+
+contains
+
+    subroutine finbound_sample
+    end subroutine
 end module finbound

@@ -1,5 +1,6 @@
 module m_circle_boundary
     use m_boundary_base
+    use m_vector
     implicit none
 
     type, extends(t_Boundary) :: t_CircleXYZ
@@ -11,7 +12,9 @@ module m_circle_boundary
 
     contains
         procedure :: check_collision => circleXYZ_check_collision
+        procedure :: hit => circleXYZ_hit
         procedure :: is_overlap => circleXYZ_is_overlap
+        procedure :: pnormal => circleXYZ_pnormal
     end type
 
     private
@@ -96,6 +99,44 @@ contains
         record%position = pos_collided
     end function
 
+    pure function circleXYZ_hit(self, ray) result(hit_record)
+        class(t_CircleXYZ), intent(in) :: self
+        type(t_Ray), intent(in) :: ray
+        type(t_HitRecord) :: hit_record
+
+        double precision :: dist, dir
+        double precision :: t_hit
+        double precision :: pos_hit(3)
+        double precision :: r1, r2
+        integer :: axis0, axis1, axis2
+
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        dist = self%origin(axis0) - ray%origin(axis0)
+        dir = ray%direction(axis0)
+        if ((dist*dir) <= 0d0) then
+            hit_record%is_hit = .false.
+            return
+        end if
+
+        t_hit = abs(dist/dir)
+        pos_hit(:) = ray%origin(:) + ray%direction(:)*t_hit
+
+        r1 = pos_hit(axis1) - self%origin(axis1)
+        r2 = pos_hit(axis2) - self%origin(axis2)
+        if (r1*r1 + r2*r2 > self%radius*self%radius) then
+            hit_record%is_hit = .false.
+            return
+        end if
+
+        hit_record%is_hit = .true.
+        hit_record%t = t_hit
+        hit_record%position(:) = pos_hit(:)
+        hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+    end function
+
     pure function circleXYZ_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_circleXYZ), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
@@ -131,6 +172,22 @@ contains
         end if
 
         is_overlap = .true.
+    end function
+
+    pure function circleXYZ_pnormal(self, position) result(pnormal)
+        class(t_CircleXYZ), intent(in) :: self
+        double precision, intent(in) :: position(3)
+        double precision :: pnormal(3)
+
+        integer :: axis0, axis1, axis2
+
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        pnormal(axis0) = 1
+        pnormal(axis1) = 0
+        pnormal(axis2) = 0
     end function
 
 end module

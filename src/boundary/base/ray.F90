@@ -1,4 +1,5 @@
 module m_ray
+    use m_material
     implicit none
 
     type :: t_Ray
@@ -14,6 +15,7 @@ module m_ray
         double precision :: t = 0.0d0
         double precision :: position(3)
         double precision :: n(3)
+        type(t_Material) :: material
     end type
 
     private

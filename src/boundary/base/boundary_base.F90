@@ -1,4 +1,5 @@
 module m_boundary_base
+    use m_material, only: t_Material
     use m_boundary, only: DEFAULT_DOMAIN_EXTENT, &
                           t_Boundary, &
                           tp_Boundary, &

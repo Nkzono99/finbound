@@ -136,6 +136,7 @@ contains
         record%is_collided = .true.
         record%t = r
         record%position = pos_collided
+        record%material = self%material
     end function
 
     pure function cylinderXYZ_hit(self, ray) result(hit_record)
@@ -188,6 +189,7 @@ contains
                 hit_record%position(:) = pos_hit(:)
                 hit_record%is_hit = .true.
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%material = self%material
                 return
             end if
         end if
@@ -201,6 +203,7 @@ contains
                 hit_record%position(:) = pos_hit(:)
                 hit_record%is_hit = .true.
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%material = self%material
                 return
             end if
         end if

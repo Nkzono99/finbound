@@ -8,7 +8,9 @@ module m_plane_boundary
         double precision :: perp(3)
     contains
         procedure :: check_collision => plane_check_collision
+        procedure :: hit => plane_hit
         procedure :: is_overlap => plane_is_overlap
+        procedure :: pnormal => plane_pnormal
     end type
 
     type, extends(t_Boundary) :: t_PlaneXYZ
@@ -16,7 +18,9 @@ module m_plane_boundary
         double precision :: pos
     contains
         procedure :: check_collision => planeXYZ_check_collision
+        procedure :: hit => planeXYZ_hit
         procedure :: is_overlap => planeXYZ_is_overlap
+        procedure :: pnormal => planeXYZ_pnormal
     end type
 
     private
@@ -63,6 +67,31 @@ contains
         record%position = (p2 - p1)*r + p1
     end function
 
+    pure function plane_hit(self, ray) result(hit_record)
+        class(t_Plane), intent(in) :: self
+        type(t_Ray), intent(in) :: ray
+        type(t_HitRecord) :: hit_record
+
+        double precision :: dist, dir
+        double precision :: t
+        double precision :: pos_hit(3)
+
+        dist = dot(self%origin(:) - ray%origin(:), self%perp(:))
+        dir = dot(ray%direction(:), self%perp(:))
+        if (dist*dir <= 0) then
+            hit_record%is_hit = .false.
+            return
+        end if
+
+        t = abs(dist/dir)
+        pos_hit(:) = ray%origin(:) + ray%direction(:)*t
+
+        hit_record%is_hit = .true.
+        hit_record%t = t
+        hit_record%position(:) = pos_hit(:)
+        hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+    end function
+
     pure function plane_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_Plane), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
@@ -95,6 +124,14 @@ contains
         end do
 
         is_overlap = .false.
+    end function
+
+    pure function plane_pnormal(self, position) result(pnormal)
+        class(t_plane), intent(in) :: self
+        double precision, intent(in) :: position(3)
+        double precision :: pnormal(3)
+
+        pnormal(:) = self%perp(:)
     end function
 
     function new_planeXYZ(axis, pos) result(obj)
@@ -152,6 +189,31 @@ contains
         record%position = pos_collided
     end function
 
+    pure function planeXYZ_hit(self, ray) result(hit_record)
+        class(t_PlaneXYZ), intent(in) :: self
+        type(t_Ray), intent(in) :: ray
+        type(t_HitRecord) :: hit_record
+
+        double precision :: dist, dir
+        double precision :: t
+        double precision :: pos_hit(3)
+
+        dist = self%pos - ray%origin(self%axis)
+        dir = ray%direction(self%axis)
+        if (dist*dir <= 0) then
+            hit_record%is_hit = .false.
+            return
+        end if
+
+        t = abs(dist / dir)
+        pos_hit(:) = ray%origin(:) + ray%direction(:)*t
+
+        hit_record%is_hit = .true.
+        hit_record%t = t
+        hit_record%position(:) = pos_hit(:)
+        hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+    end function
+
     pure function planeXYZ_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_PlaneXYZ), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
@@ -164,6 +226,15 @@ contains
 
         is_overlap = sdoms(1, self%axis) - extent_(1, self%axis) <= self%pos &
                    .and. self%pos <= sdoms(2, self%axis) + extent_(2, self%axis)
+    end function
+
+    pure function planeXYZ_pnormal(self, position) result(pnormal)
+        class(t_planeXYZ), intent(in) :: self
+        double precision, intent(in) :: position(3)
+        double precision :: pnormal(3)
+
+        pnormal(:) = 0d0
+        pnormal(self%axis) = 1d0
     end function
 
 end module

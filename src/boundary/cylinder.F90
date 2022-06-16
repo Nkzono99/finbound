@@ -22,7 +22,9 @@ module m_cylinder_boundary
         double precision :: height
     contains
         procedure :: check_collision => cylinderXYZ_check_collision
+        procedure :: hit => cylinderXYZ_hit
         procedure :: is_overlap => cylinderXYZ_is_overlap
+        procedure :: pnormal => cylinder_pnormal
     end type
 
     private
@@ -136,6 +138,76 @@ contains
         record%position = pos_collided
     end function
 
+    pure function cylinderXYZ_hit(self, ray) result(hit_record)
+        class(t_CylinderXYZ), intent(in) :: self
+        type(t_Ray), intent(in) :: ray
+        type(t_HitRecord) :: hit_record
+
+        double precision :: p1(3), p2(3)
+
+        double precision :: t
+        double precision :: pos_hit(3)
+        
+        double precision :: a, b, c
+        double precision :: d2, d
+        integer :: axis0, axis1, axis2
+
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        p1(:) = ray%origin(:)
+        p2(:) = ray%origin(:) + ray%direction(:)
+
+        block
+            double precision :: x1, y1, x2, y2
+            x1 = p1(axis1) - self%origin(axis1)
+            y1 = p1(axis2) - self%origin(axis2)
+            x2 = p2(axis1) - self%origin(axis1)
+            y2 = p2(axis2) - self%origin(axis2)
+
+            a = x1*x1 + y1*y1 + x2*x2 + y2*y2 - 2*x1*x2 - 2*y1*y2
+            b = x1*x2 + y1*y2 - x1*x1 - y1*y1
+            c = x1*x1 + y1*y1 - self%radius*self%radius
+        end block
+
+        d2 = b*b - a*c
+        if (d2 < 0.0d0) then
+            hit_record%is_hit = .false.
+            return
+        end if
+
+        d = sqrt(d2)
+
+        t = (-b - d)/a
+        if (t < 0.0d0) then
+            pos_hit = (p2 - p1)*t + p1
+            if (self%origin(axis0) <= pos_hit(axis0) &
+                .and. pos_hit(axis0) <= self%origin(axis0) + self%height) then
+                hit_record%t = t
+                hit_record%position(:) = pos_hit(:)
+                hit_record%is_hit = .true.
+                hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                return
+            end if
+        end if
+
+        t = (-b + d)/a
+        if (t < 0.0d0) then
+            pos_hit = (p2 - p1)*t + p1
+            if (self%origin(axis0) <= pos_hit(axis0) &
+                .and. pos_hit(axis0) <= self%origin(axis0) + self%height) then
+                hit_record%t = t
+                hit_record%position(:) = pos_hit(:)
+                hit_record%is_hit = .true.
+                hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                return
+            end if
+        end if
+
+        hit_record%is_hit = .false.
+    end function
+
     pure function cylinderXYZ_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_CylinderXYZ), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
@@ -175,4 +247,23 @@ contains
 
         is_overlap = .true.
     end function
+
+    pure function cylinder_pnormal(self, position) result(pnormal)
+        class(t_CylinderXYZ), intent(in) :: self
+        double precision, intent(in) :: position(3)
+        double precision :: pnormal(3)
+
+        integer :: axis0, axis1, axis2
+
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        pnormal(axis0) = 0d0
+        pnormal(axis1) = position(axis1) - self%origin(axis1)
+        pnormal(axis2) = position(axis2) - self%origin(axis2)
+
+        call normalize(pnormal)
+    end function
+
 end module

@@ -79,15 +79,16 @@ contains
         obj%p14(:) = obj%p(:, 4) - obj%p(:, 1)
     end function
 
-    function parallelCamera_generate_randray(self) result(ray)
+    function parallelCamera_generate_randray(self, rands) result(ray)
         class(t_ParallelCamera), intent(inout) :: self
+        double precision, intent(in) :: rands(2) !> 0.0 ~ 1.0
         type(t_Ray) :: ray
 
-        double precision :: s, t
         double precision :: o(3), d(3)
+        double precision :: s, t
 
-        call random_number(s)
-        call random_number(t)
+        s = rands(1)
+        t = rands(2)
 
         o(:) = s*self%p12 + t*self%p14 + self%p(:, 1)
         d(:) = self%n

@@ -123,7 +123,7 @@ contains
             return
         end if
 
-        ip = dot(normal(:), (position_on_boundary(:) - headed_by_vector(:)))
+        ip = dot(normal(:), (headed_by_vector(:) - position_on_boundary(:)))
         normal(:) = normal(:)*(ip/abs(ip))
     end function
 

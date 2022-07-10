@@ -58,21 +58,19 @@ contains
         double precision, intent(in) :: p2(3)
         type(t_CollisionRecord) :: record
 
-        double precision :: min_t
         integer :: i
         type(t_CollisionRecord) :: tmp_record
 
         record%is_collided = .false.
+        record%t = 100
 
-        min_t = 100
         do i = 1, self%nboundaries
             tmp_record = self%boundaries(i)%check_collision(p1, p2)
             if (.not. tmp_record%is_collided) then
-                continue
+                cycle
             end if
 
-            if (tmp_record%t < min_t) then
-                min_t = tmp_record%t
+            if (tmp_record%t < record%t) then
                 record = tmp_record
             end if
         end do
@@ -96,8 +94,11 @@ contains
 
         do i = 1, self%nboundaries
             tmp_hit_record = self%boundaries(i)%hit(ray)
-            if (tmp_hit_record%is_hit &
-                .and. tmp_hit_record%t < hit_record%t) then
+            if (.not. tmp_hit_record%is_hit) then
+                cycle
+            end if
+
+            if (tmp_hit_record%t < hit_record%t) then
                 hit_record = tmp_hit_record
             end if
         end do

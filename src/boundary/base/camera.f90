@@ -87,12 +87,6 @@ contains
 
         obj%p12(:) = obj%p(:, 2) - obj%p(:, 1)
         obj%p14(:) = obj%p(:, 4) - obj%p(:, 1)
-
-        print *, obj%p(:, 1)
-        print *, obj%p(:, 2)
-        print *, obj%p(:, 3)
-        print *, obj%p(:, 4)
-        print *, obj%n(:)
     end function
 
     function new_ParallelCamera(phiz, phixy, nx, ny, nz) result(obj)

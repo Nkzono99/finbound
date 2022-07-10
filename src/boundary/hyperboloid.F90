@@ -88,7 +88,6 @@ contains
         double precision :: o(3)
         double precision :: d(3)
         double precision :: abc(3)
-        double precision :: sg(3)
         double precision :: a, b, c
         double precision :: d2
         double precision :: r
@@ -101,16 +100,9 @@ contains
         abc(axis1) = self%a
         abc(axis2) = self%b
         abc(axis0) = self%c
-        sg(axis1) = 1
-        sg(axis2) = 1
-        sg(axis0) = -1
 
         o(:) = p1(:) - self%origin(:)
         d(:) = p2(:) - p1(:)
-
-        a = sum((d(:)/abc(:))**2*sg(:))
-        b = sum(o(:)*d(:)/abc(:)**2*sg(:))
-        c = sum((o(:)/abc(:))**2*sg(:)) - 1.0d0
 
         a = (d(axis1)/self%a)**2 + (d(axis2)/self%b)**2 - (d(axis0)/self%c**2)
         b = (o(axis1)*d(axis1)/self%a**2) + (o(axis2)*d(axis2)/self%b**2) - (o(axis0)*d(axis0)/self%c**2)
@@ -163,7 +155,6 @@ contains
         double precision :: o(3)
         double precision :: d(3)
         double precision :: abc(3)
-        double precision :: sg(3)
         double precision :: a, b, c
         double precision :: d2, d1
 
@@ -179,20 +170,13 @@ contains
         abc(axis1) = self%a
         abc(axis2) = self%b
         abc(axis0) = self%c
-        sg(axis1) = 1
-        sg(axis2) = 1
-        sg(axis0) = -1
 
         o(:) = p1(:) - self%origin(:)
         d(:) = p2(:) - p1(:)
 
-        a = sum((d(:)/abc(:))**2*sg(:))
-        b = sum(o(:)*d(:)/abc(:)**2*sg(:))
-        c = sum((o(:)/abc(:))**2*sg(:)) - 1.0d0
-
-        ! a = (d(axis1)/self%a)**2 + (d(axis2)/self%b)**2 - (d(axis0)/self%c)**2
-        ! b = (o(axis1)*d(axis1)/self%a**2) + (o(axis2)*d(axis2)/self%b**2) - (o(axis0)*d(axis0)/self%c**2)
-        ! c = (o(axis1)/self%a)**2 + (o(axis2)/self%b)**2 - (o(axis0)/self%c)**2 - 1.0d0
+        a = (d(axis1)/self%a)**2 + (d(axis2)/self%b)**2 - (d(axis0)/self%c)**2
+        b = (o(axis1)*d(axis1)/self%a**2) + (o(axis2)*d(axis2)/self%b**2) - (o(axis0)*d(axis0)/self%c**2)
+        c = (o(axis1)/self%a)**2 + (o(axis2)/self%b)**2 - (o(axis0)/self%c)**2 - 1.0d0
 
         d2 = b*b - a*c
         if (d2 < 0.0d0) then

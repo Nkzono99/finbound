@@ -28,8 +28,72 @@ module m_camera
     private
     public t_ParallelCamera
     public new_ParallelCamera
+    public new_ParallelCamera_optimized
 
 contains
+
+    function new_ParallelCamera_optimized(phiz, phixy, ranges) result(obj)
+        type(t_ParallelCamera) :: obj
+        double precision, intent(in) :: phiz, phixy
+        integer, intent(in) :: ranges(2, 3)
+
+        double precision :: ps(3, 8)
+        double precision :: nc1(3), nc2(3)
+
+        obj%phiz = phiz
+        obj%phixy = phixy
+
+        obj%n = [0d0, 0d0, -1d0]
+        obj%n = obj%rotate(obj%n)
+
+        nc1 = [1d0, 0d0, 0d0]
+        nc2 = [0d0, 1d0, 0d0]
+
+        nc1 = obj%rotate(nc1)
+        nc2 = obj%rotate(nc2)
+
+        block
+            double precision :: xl, yl, zl
+            xl = ranges(2, 1) - ranges(1, 1)
+            yl = ranges(2, 2) - ranges(1, 2)
+            zl = ranges(2, 3) - ranges(1, 3)
+            obj%Sl = abs(xl*yl*cos(phiz)) &
+                     + abs(yl*zl*sin(phiz)*cos(phixy)) &
+                     + abs(zl*xl*sin(phiz)*sin(phixy))
+        end block
+
+        block
+            integer :: i, j, k
+            double precision :: p(3)
+            do concurrent(i=1:2, j=1:2, k=1:2)
+                p = [ranges(i, 1), ranges(j, 2), ranges(k, 3)]
+                p = [dot(nc1, p), dot(nc2, p), dot(obj%n, p)]
+                ps(:, (i - 1) + (j - 1)*2 + (k - 1)*4 + 1) = p(:)
+            end do
+        end block
+
+        obj%p(1:2, 1) = [minval(ps(1, :)), minval(ps(2, :))]
+        obj%p(1:2, 2) = [maxval(ps(1, :)), minval(ps(2, :))]
+        obj%p(1:2, 3) = [maxval(ps(1, :)), maxval(ps(2, :))]
+        obj%p(1:2, 4) = [minval(ps(1, :)), maxval(ps(2, :))]
+        obj%p(3, :) = minval(ps(3, :)) - 1.0d0
+
+        obj%S = (obj%p(1, 3) - obj%p(1, 1))*(obj%p(2, 3) - obj%p(2, 1))
+
+        obj%p(1:3, 1) = obj%p(1, 1)*nc1 + obj%p(2, 1)*nc2 + obj%p(3, 1)*obj%n
+        obj%p(1:3, 2) = obj%p(1, 2)*nc1 + obj%p(2, 2)*nc2 + obj%p(3, 2)*obj%n
+        obj%p(1:3, 3) = obj%p(1, 3)*nc1 + obj%p(2, 3)*nc2 + obj%p(3, 3)*obj%n
+        obj%p(1:3, 4) = obj%p(1, 4)*nc1 + obj%p(2, 4)*nc2 + obj%p(3, 4)*obj%n
+
+        obj%p12(:) = obj%p(:, 2) - obj%p(:, 1)
+        obj%p14(:) = obj%p(:, 4) - obj%p(:, 1)
+
+        print *, obj%p(:, 1)
+        print *, obj%p(:, 2)
+        print *, obj%p(:, 3)
+        print *, obj%p(:, 4)
+        print *, obj%n(:)
+    end function
 
     function new_ParallelCamera(phiz, phixy, nx, ny, nz) result(obj)
         type(t_ParallelCamera) :: obj

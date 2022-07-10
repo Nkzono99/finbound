@@ -63,7 +63,8 @@ module finbound
                      t_HitRecord
 
     use m_camera, only: t_ParallelCamera, &
-                        new_ParallelCamera
+                        new_ParallelCamera, &
+                        new_ParallelCamera_optimized
 
     implicit none
 

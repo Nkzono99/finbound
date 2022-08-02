@@ -65,28 +65,39 @@ contains
         double precision, intent(in) :: p2(3)
         type(t_CollisionRecord) :: record
 
-        double precision :: d1, d2
-        double precision :: r
         double precision :: pos_collided(3)
 
-        d1 = p1(self%axis) - self%origin(self%axis)
-        d2 = p2(self%axis) - self%origin(self%axis)
-        if (d1*d2 >= 0) then
+        double precision :: dist, dir
+        double precision :: t
+        double precision :: r1, r2
+        integer :: axis0, axis1, axis2
+
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        dist = self%origin(self%axis) - p1(self%axis)
+        dir = p2(self%axis) - p1(self%axis)
+
+        t = dist/dir
+
+        if (t < 0.0d0 .or. 1.0d0 < t) then
             record%is_collided = .false.
             return
         end if
 
-        r = abs(d1)/(abs(d1) + abs(d2))
-        pos_collided = (p2 - p1)*r + p1
+        pos_collided(:) = (1 - t)*p1(:) + t*p2(:) ! p1(:) + (p2(:) - p1(:))*t
 
-        if (norm2(pos_collided - self%origin) < self%radius) then
+        r1 = pos_collided(axis1) - self%origin(axis1)
+        r2 = pos_collided(axis2) - self%origin(axis2)
+        if (r1*r1 + r2*r2 < self%radius*self%radius) then
             record%is_collided = .false.
             return
         end if
 
         record%is_collided = .true.
-        record%t = r
-        record%position = pos_collided
+        record%t = t
+        record%position(:) = pos_collided(:)
         record%material = self%material
     end function
 

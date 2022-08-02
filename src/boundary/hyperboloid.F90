@@ -87,24 +87,20 @@ contains
 
         double precision :: o(3)
         double precision :: d(3)
-        double precision :: abc(3)
         double precision :: a, b, c
+        double precision :: d1
         double precision :: d2
-        double precision :: r
+        double precision :: t
         double precision :: pos_collided(3)
 
         axis0 = self%axis
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
 
-        abc(axis1) = self%a
-        abc(axis2) = self%b
-        abc(axis0) = self%c
-
         o(:) = p1(:) - self%origin(:)
         d(:) = p2(:) - p1(:)
 
-        a = (d(axis1)/self%a)**2 + (d(axis2)/self%b)**2 - (d(axis0)/self%c**2)
+        a = (d(axis1)/self%a)**2 + (d(axis2)/self%b)**2 - (d(axis0)/self%c)**2
         b = (o(axis1)*d(axis1)/self%a**2) + (o(axis2)*d(axis2)/self%b**2) - (o(axis0)*d(axis0)/self%c**2)
         c = (o(axis1)/self%a)**2 + (o(axis2)/self%b)**2 - (o(axis0)/self%c)**2 - 1.0d0
 
@@ -114,32 +110,45 @@ contains
             return
         end if
 
-        block
-            double precision :: d1
-            d1 = sqrt(d2)
+        d1 = sqrt(d2)
 
-            r = (-b - d1)/a
-            if (r < 0.0d0 .or. 1.0d0 < r) then
-                r = (-b + d1)/a
+        if (a >= 0) then
+            t = (-b - d1)/a
+        else
+            t = (-b + d1)/a
+        end if
+        if (0.0d0 <= t .and. t <= 1.0d0) then
+            pos_collided = (p2 - p1)*t + p1
+
+            if (self%origin(axis0) - 0.5d0*self%height <= pos_collided(axis0) &
+                .and. pos_collided(axis0) <= self%origin(axis0) + 0.5d0*self%height) then
+                record%is_collided = .true.
+                record%t = t
+                record%position(:) = pos_collided(:)
+                record%material = self%material
+                return
             end if
-        end block
-
-        if (r < 0.0d0 .or. 1.0d0 < r) then
-            record%is_collided = .false.
-            return
         end if
 
-        pos_collided = (p2 - p1)*r + p1
-        if (pos_collided(axis0) < self%origin(axis0) - 0.5d0*self%height &
-            .or. self%origin(axis0) + 0.5d0*self%height < pos_collided(axis0)) then
-            record%is_collided = .false.
-            return
+        if (a >= 0) then
+            t = (-b + d1)/a
+        else
+            t = (-b - d1)/a
+        end if
+        if (0.0d0 <= t .and. t <= 1.0d0) then
+            pos_collided = (p2 - p1)*t + p1
+
+            if (self%origin(axis0) - 0.5d0*self%height <= pos_collided(axis0) &
+                .and. pos_collided(axis0) <= self%origin(axis0) + 0.5d0*self%height) then
+                record%is_collided = .true.
+                record%t = t
+                record%position(:) = pos_collided(:)
+                record%material = self%material
+                return
+            end if
         end if
 
-        record%is_collided = .true.
-        record%t = r
-        record%position(:) = pos_collided(:)
-        record%material = self%material
+        record%is_collided = .false.
     end function
 
     pure function hyperboloidXYZ_hit(self, ray) result(hit_record)
@@ -154,7 +163,6 @@ contains
 
         double precision :: o(3)
         double precision :: d(3)
-        double precision :: abc(3)
         double precision :: a, b, c
         double precision :: d2, d1
 
@@ -166,10 +174,6 @@ contains
         axis0 = self%axis
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
-
-        abc(axis1) = self%a
-        abc(axis2) = self%b
-        abc(axis0) = self%c
 
         o(:) = p1(:) - self%origin(:)
         d(:) = p2(:) - p1(:)
@@ -186,7 +190,11 @@ contains
 
         d1 = sqrt(d2)
 
-        t = (-b + d1)/a
+        if (a >= 0) then
+            t = (-b - d1)/a
+        else
+            t = (-b + d1)/a
+        end if
         if (t >= 0.0d0) then
             pos_hit = (p2 - p1)*t + p1
 
@@ -201,7 +209,11 @@ contains
             end if
         end if
 
-        t = (-b - d1)/a
+        if (a >= 0) then
+            t = (-b + d1)/a
+        else
+            t = (-b - d1)/a
+        end if
         if (t >= 0.0d0) then
             pos_hit = (p2 - p1)*t + p1
 
@@ -238,8 +250,8 @@ contains
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
 
-        if (self%origin(axis0) + self%height < sdoms_(1, axis0) &
-            .or. sdoms_(2, axis0) < self%origin(axis0)) then
+        if (self%origin(axis0) + self%height*0.5d0 < sdoms_(1, axis0) &
+            .or. sdoms_(2, axis0) < self%origin(axis0) - self%height*0.5d0) then
             is_overlap = .false.
             return
         end if

@@ -58,6 +58,12 @@ module finbound
                                       new_hyperboloidY, &
                                       new_HyperboloidZ
 
+    use m_ellipsoid_boundary, only: t_EllipsoidXYZ, &
+                                     new_ellipsoidXYZ, &
+                                     new_ellipsoidX, &
+                                     new_ellipsoidY, &
+                                     new_ellipsoidZ
+
     use m_ray, only: t_Ray, &
                      new_Ray, &
                      t_HitRecord

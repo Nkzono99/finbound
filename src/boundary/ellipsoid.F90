@@ -1,0 +1,292 @@
+module m_ellipsoid_boundary
+    use m_vector
+    use m_boundary_base
+    implicit none
+
+    !> The ellipsoid boundary.
+    !>   x^2/a^2 + y^2/b^2 - z^2/c^2 = 1
+    type, extends(t_Boundary) :: t_EllipsoidXYZ
+        integer :: axis
+        double precision :: origin(3)
+        double precision :: max_radius
+        double precision :: min_radius
+        double precision :: height
+        double precision :: a, b, c
+    contains
+        procedure :: check_collision => ellipsoidXYZ_check_collision
+        procedure :: is_overlap => ellipsoidXYZ_is_overlap
+        procedure :: pnormal => ellipsoid_pnormal
+        procedure :: hit => ellipsoidXYZ_hit
+    end type
+
+    private
+    public t_EllipsoidXYZ
+    public new_ellipsoidXYZ
+    public new_ellipsoidX
+    public new_ellipsoidY
+    public new_ellipsoidZ
+
+contains
+
+    pure function new_ellipsoidXYZ(axis, origin, min_radius, max_radius, height) result(obj)
+        integer, intent(in) :: axis
+        double precision, intent(in) :: origin(3)
+        double precision, intent(in) :: max_radius
+        double precision, intent(in) :: min_radius
+        double precision, intent(in) :: height
+        type(t_EllipsoidXYZ) :: obj
+
+        obj%axis = axis
+        obj%origin = origin
+        obj%min_radius = min_radius
+        obj%max_radius = max_radius
+        obj%height = height
+
+        obj%a = max_radius
+        obj%b = max_radius
+        obj%c = sqrt((0.5d0*height)**2/(1.0d0 - (min_radius/max_radius)**2))
+    end function
+
+    pure function new_ellipsoidX(origin, min_radius, max_radius, height) result(obj)
+        double precision, intent(in) :: origin(3)
+        double precision, intent(in) :: max_radius
+        double precision, intent(in) :: min_radius
+        double precision, intent(in) :: height
+        type(t_EllipsoidXYZ) :: obj
+
+        obj = new_ellipsoidXYZ(1, origin, min_radius, max_radius, height)
+    end function
+
+    pure function new_ellipsoidY(origin, min_radius, max_radius, height) result(obj)
+        double precision, intent(in) :: origin(3)
+        double precision, intent(in) :: max_radius
+        double precision, intent(in) :: min_radius
+        double precision, intent(in) :: height
+        type(t_EllipsoidXYZ) :: obj
+
+        obj = new_ellipsoidXYZ(2, origin, min_radius, max_radius, height)
+    end function
+
+    pure function new_EllipsoidZ(origin, min_radius, max_radius, height) result(obj)
+        double precision, intent(in) :: origin(3)
+        double precision, intent(in) :: max_radius
+        double precision, intent(in) :: min_radius
+        double precision, intent(in) :: height
+        type(t_EllipsoidXYZ) :: obj
+
+        obj = new_ellipsoidXYZ(3, origin, min_radius, max_radius, height)
+    end function
+
+    pure function ellipsoidXYZ_check_collision(self, p1, p2) result(record)
+        class(t_EllipsoidXYZ), intent(in) :: self
+        double precision, intent(in) :: p1(3)
+        double precision, intent(in) :: p2(3)
+        type(t_CollisionRecord) :: record
+
+        integer :: axis0, axis1, axis2
+
+        double precision :: o(3)
+        double precision :: d(3)
+        double precision :: a, b, c
+        double precision :: d1
+        double precision :: d2
+        double precision :: t
+        double precision :: pos_collided(3)
+
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        o(:) = p1(:) - self%origin(:)
+        d(:) = p2(:) - p1(:)
+
+        a = (d(axis1)/self%a)**2 + (d(axis2)/self%b)**2 + (d(axis0)/self%c)**2
+        b = (o(axis1)*d(axis1)/self%a**2) + (o(axis2)*d(axis2)/self%b**2) + (o(axis0)*d(axis0)/self%c**2)
+        c = (o(axis1)/self%a)**2 + (o(axis2)/self%b)**2 + (o(axis0)/self%c)**2 - 1.0d0
+
+        d2 = b*b - a*c
+        if (d2 < 0.0d0) then
+            record%is_collided = .false.
+            return
+        end if
+
+        d1 = sqrt(d2)
+
+        if (a >= 0) then
+            t = (-b - d1)/a
+        else
+            t = (-b + d1)/a
+        end if
+        if (0.0d0 <= t .and. t <= 1.0d0) then
+            pos_collided = (p2 - p1)*t + p1
+
+            if (self%origin(axis0) - 0.5d0*self%height <= pos_collided(axis0) &
+                .and. pos_collided(axis0) <= self%origin(axis0) + 0.5d0*self%height) then
+                record%is_collided = .true.
+                record%t = t
+                record%position(:) = pos_collided(:)
+                record%material = self%material
+                return
+            end if
+        end if
+
+        if (a >= 0) then
+            t = (-b + d1)/a
+        else
+            t = (-b - d1)/a
+        end if
+        if (0.0d0 <= t .and. t <= 1.0d0) then
+            pos_collided = (p2 - p1)*t + p1
+
+            if (self%origin(axis0) - 0.5d0*self%height <= pos_collided(axis0) &
+                .and. pos_collided(axis0) <= self%origin(axis0) + 0.5d0*self%height) then
+                record%is_collided = .true.
+                record%t = t
+                record%position(:) = pos_collided(:)
+                record%material = self%material
+                return
+            end if
+        end if
+
+        record%is_collided = .false.
+    end function
+
+    pure function ellipsoidXYZ_hit(self, ray) result(hit_record)
+        class(t_ellipsoidXYZ), intent(in) :: self
+        type(t_Ray), intent(in) :: ray
+        type(t_HitRecord) :: hit_record
+
+        double precision :: t
+        double precision :: pos_hit(3)
+
+        double precision :: p1(3), p2(3)
+
+        double precision :: o(3)
+        double precision :: d(3)
+        double precision :: a, b, c
+        double precision :: d2, d1
+
+        integer :: axis0, axis1, axis2
+
+        p1(:) = ray%origin(:)
+        p2(:) = ray%origin(:) + ray%direction(:)
+
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        o(:) = p1(:) - self%origin(:)
+        d(:) = p2(:) - p1(:)
+
+        a = (d(axis1)/self%a)**2 + (d(axis2)/self%b)**2 + (d(axis0)/self%c)**2
+        b = (o(axis1)*d(axis1)/self%a**2) + (o(axis2)*d(axis2)/self%b**2) + (o(axis0)*d(axis0)/self%c**2)
+        c = (o(axis1)/self%a)**2 + (o(axis2)/self%b)**2 + (o(axis0)/self%c)**2 - 1.0d0
+
+        d2 = b*b - a*c
+        if (d2 < 0.0d0) then
+            hit_record%is_hit = .false.
+            return
+        end if
+
+        d1 = sqrt(d2)
+
+        if (a >= 0) then
+            t = (-b - d1)/a
+        else
+            t = (-b + d1)/a
+        end if
+        if (t >= 0.0d0) then
+            pos_hit = (p2 - p1)*t + p1
+
+            if (self%origin(axis0) - 0.5d0*self%height <= pos_hit(axis0) &
+                .and. pos_hit(axis0) <= self%origin(axis0) + 0.5d0*self%height) then
+                hit_record%is_hit = .true.
+                hit_record%t = t
+                hit_record%position(:) = pos_hit(:)
+                hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%material = self%material
+                return
+            end if
+        end if
+
+        if (a >= 0) then
+            t = (-b + d1)/a
+        else
+            t = (-b - d1)/a
+        end if
+        if (t >= 0.0d0) then
+            pos_hit = (p2 - p1)*t + p1
+
+            if (self%origin(axis0) - 0.5d0*self%height <= pos_hit(axis0) &
+                .and. pos_hit(axis0) <= self%origin(axis0) + 0.5d0*self%height) then
+                hit_record%is_hit = .true.
+                hit_record%t = t
+                hit_record%position(:) = pos_hit(:)
+                hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%material = self%material
+                return
+            end if
+        end if
+
+        hit_record%is_hit = .false.
+    end function
+
+    pure function ellipsoidXYZ_is_overlap(self, sdoms, extent) result(is_overlap)
+        class(t_EllipsoidXYZ), intent(in) :: self
+        double precision, intent(in) :: sdoms(2, 3)
+        double precision, intent(in), optional :: extent(2, 3)
+        logical :: is_overlap
+
+        double precision :: extent_(2, 3)
+        double precision :: sdoms_(2, 3)
+
+        integer :: axis0, axis1, axis2
+
+        extent_ = get_default_extent(extent)
+        sdoms_(1, :) = sdoms(1, :) - extent_(1, :)
+        sdoms_(2, :) = sdoms(2, :) + extent_(2, :)
+
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        if (self%origin(axis0) + self%height*0.5d0 < sdoms_(1, axis0) &
+            .or. sdoms_(2, axis0) < self%origin(axis0) - self%height*0.5d0) then
+            is_overlap = .false.
+            return
+        end if
+
+        if (self%origin(axis1) + self%max_radius < sdoms_(1, axis1) &
+            .or. sdoms_(2, axis1) < self%origin(axis1) - self%max_radius) then
+            is_overlap = .false.
+            return
+        end if
+
+        if (self%origin(axis2) + self%max_radius < sdoms_(1, axis2) &
+            .or. sdoms_(2, axis2) < self%origin(axis2) - self%max_radius) then
+            is_overlap = .false.
+            return
+        end if
+
+        is_overlap = .true.
+    end function
+
+    pure function ellipsoid_pnormal(self, position) result(pnormal)
+        class(t_EllipsoidXYZ), intent(in) :: self
+        double precision, intent(in) :: position(3)
+        double precision :: pnormal(3)
+
+        integer :: axis0, axis1, axis2
+
+        axis0 = self%axis
+        axis1 = mod(axis0, 3) + 1
+        axis2 = mod(axis0 + 1, 3) + 1
+
+        pnormal(axis0) = (position(axis0) - self%origin(axis0))/self%c**2
+        pnormal(axis1) = (position(axis1) - self%origin(axis1))/self%a**2
+        pnormal(axis2) = (position(axis2) - self%origin(axis2))/self%b**2
+
+        call normalize(pnormal)
+    end function
+
+end module

@@ -9,4 +9,5 @@
         "-I${workspaceFolder}/test",
         "-I${workspaceFolder}/build/dependencies/futils/src",
     ],
+    "files.eol": "\n",
 }

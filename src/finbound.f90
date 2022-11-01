@@ -15,11 +15,17 @@ module finbound
                                 new_planeY, &
                                 new_planeZ
 
-    use m_rectangle_boundary, only: t_RectangleXYZ, &
-                                    new_rectangleXYZ, &
-                                    new_rectangleX, &
-                                    new_rectangleY, &
-                                    new_rectangleZ
+    use m_triangle_boundary, only: t_Triangle, &
+                                   new_Triangle
+
+    use m_rectangle_boundary, only: t_Rectangle, &
+                                    new_Rectangle
+
+    use m_rectangleXYZ_boundary, only: t_RectangleXYZ, &
+                                       new_rectangleXYZ, &
+                                       new_rectangleX, &
+                                       new_rectangleY, &
+                                       new_rectangleZ
 
     use m_circle_boundary, only: t_CircleXYZ, &
                                  new_CircleXYZ, &
@@ -59,10 +65,10 @@ module finbound
                                       new_HyperboloidZ
 
     use m_ellipsoid_boundary, only: t_EllipsoidXYZ, &
-                                     new_ellipsoidXYZ, &
-                                     new_ellipsoidX, &
-                                     new_ellipsoidY, &
-                                     new_ellipsoidZ
+                                    new_ellipsoidXYZ, &
+                                    new_ellipsoidX, &
+                                    new_ellipsoidY, &
+                                    new_ellipsoidZ
 
     use m_ray, only: t_Ray, &
                      new_Ray, &
@@ -71,11 +77,4 @@ module finbound
     use m_camera, only: t_ParallelCamera, &
                         new_ParallelCamera, &
                         new_ParallelCamera_optimized
-
-    implicit none
-
-contains
-
-    subroutine finbound_sample
-    end subroutine
 end module finbound

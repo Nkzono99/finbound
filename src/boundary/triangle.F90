@@ -84,7 +84,7 @@ contains
         ! Finally, solve for u, v, t using Cramer's rule.
 
         denominator = det(v12, v13, -dir)
-        if (denominator <= 0) then
+        if (abs(denominator) <= 1d-10) then
             record%is_collided = .false.
             return
         end if
@@ -150,7 +150,7 @@ contains
         ! Finally, solve for u, v, t using Cramer's rule.
 
         denominator = det(v12, v13, -dir)
-        if (denominator <= 0) then
+        if (abs(denominator) <= 1d-10) then
             hit_record%is_hit = .false.
             return
         end if

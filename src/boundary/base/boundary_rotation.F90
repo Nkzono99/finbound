@@ -15,6 +15,8 @@ module m_boundary_rotation
         procedure :: is_overlap => boundaryRotation_is_overlap
         procedure :: pnormal => boundaryRotation_pnormal
 
+        procedure :: destroy => boundaryRotation_destroy
+
         procedure, private :: forward => boundaryRotation_forward
         procedure, private :: backward => boundaryRotation_backward
     end type
@@ -149,6 +151,12 @@ contains
         pnb(:) = self%backward(pnn(:))
         pnormal(:) = pnn(:) - position(:)
     end function
+
+    subroutine boundaryRotation_destroy(self)
+        class(t_BoundaryRotationXYZ), intent(inout) :: self
+
+        call self%pboundary%destroy()
+    end subroutine
 
     pure function boundaryRotation_forward(self, p) result(q)
         class(t_BoundaryRotationXYZ), intent(in) :: self

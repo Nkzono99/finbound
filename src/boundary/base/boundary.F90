@@ -24,6 +24,7 @@ module m_boundary
         procedure(boundary_is_overlap), deferred :: is_overlap
         procedure(boundary_pnormal), deferred :: pnormal
         procedure :: normal => boundary_normal
+        procedure :: destroy => boundary_destroy
     end type
 
     interface
@@ -69,6 +70,7 @@ module m_boundary
         procedure :: is_overlap => pboundary_is_overlap
         procedure :: pnormal => pboundary_pnormal
         procedure :: hit => pboundary_hit
+        procedure :: destroy => pboundary_destroy
     end type
 
     private
@@ -171,5 +173,19 @@ contains
             ret = DEFAULT_DOMAIN_EXTENT
         end if
     end function
+
+    !> Destroy instance.
+    !>
+    !> To be called if no further references are made.
+    !> Overriding in child classes, as the abstract class does nothing.
+    subroutine boundary_destroy(self)
+        class(t_Boundary), intent(inout) :: self
+    end subroutine
+
+    subroutine pboundary_destroy(self)
+        class(tp_Boundary), intent(inout) :: self
+
+        deallocate(self%ref)
+    end subroutine
 
 end module

@@ -33,6 +33,12 @@ module finbound
                                  new_CircleY, &
                                  new_CircleZ
 
+    use m_donut_boundary, only: t_DonutXYZ, &
+                                new_DonutXYZ, &
+                                new_DonutX, &
+                                new_DonutY, &
+                                new_DonutZ
+
     use m_cylinder_boundary, only: t_CylinderXYZ, &
                                    new_cylinderXYZ, &
                                    new_cylinderX, &

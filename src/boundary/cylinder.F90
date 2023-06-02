@@ -92,16 +92,28 @@ contains
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
 
-        block
-            double precision :: x1, y1, x2, y2
-            x1 = p1(axis1) - self%origin(axis1)
-            y1 = p1(axis2) - self%origin(axis2)
-            x2 = p2(axis1) - self%origin(axis1)
-            y2 = p2(axis2) - self%origin(axis2)
+        ! block
+        !     double precision :: x1, y1, x2, y2
+        !     x1 = p1(axis1) - self%origin(axis1)
+        !     y1 = p1(axis2) - self%origin(axis2)
+        !     x2 = p2(axis1) - self%origin(axis1)
+        !     y2 = p2(axis2) - self%origin(axis2)
 
-            a = x1*x1 + y1*y1 + x2*x2 + y2*y2 - 2*x1*x2 - 2*y1*y2
-            b = x1*x2 + y1*y2 - x1*x1 - y1*y1
-            c = x1*x1 + y1*y1 - self%radius*self%radius
+        !     a = x1*x1 + y1*y1 + x2*x2 + y2*y2 - 2*x1*x2 - 2*y1*y2
+        !     b = x1*x2 + y1*y2 - x1*x1 - y1*y1
+        !     c = x1*x1 + y1*y1 - self%radius*self%radius
+        ! end block
+        block
+            double precision :: xr, yr
+            double precision :: dx, dy
+            xr = p1(axis1) - self%origin(axis1)
+            yr = p1(axis2) - self%origin(axis2)
+            dx = p2(axis1) - p1(axis1)
+            dy = p2(axis2) - p1(axis2)
+
+            a = dx*dx + dy*dy
+            b = xr*dx + yr*dy
+            c = xr*xr + yr*yr - self%radius*self%radius
         end block
 
         d2 = b*b - a*c
@@ -150,7 +162,7 @@ contains
         double precision :: pos_hit(3)
         
         double precision :: a, b, c
-        double precision :: d2, d
+        double precision :: d2, d1
         integer :: axis0, axis1, axis2
 
         axis0 = self%axis
@@ -161,15 +173,26 @@ contains
         p2(:) = ray%origin(:) + ray%direction(:)
 
         block
-            double precision :: x1, y1, x2, y2
-            x1 = p1(axis1) - self%origin(axis1)
-            y1 = p1(axis2) - self%origin(axis2)
-            x2 = p2(axis1) - self%origin(axis1)
-            y2 = p2(axis2) - self%origin(axis2)
+            ! Solve equation.
+            !   P = Ro + t*d
+            !   |OP| = r
+            !
+            !   P: cross point
+            !   Ro: origin of the ray
+            !   t: coefficient
+            !   d: direction of the ray
+            !   O: origin of the cylinder
+            !   r: radius of the cylinder
+            double precision :: xr, yr
+            double precision :: dx, dy
+            xr = p1(axis1) - self%origin(axis1)
+            yr = p1(axis2) - self%origin(axis2)
+            dx = p2(axis1) - p1(axis1)
+            dy = p2(axis2) - p1(axis2)
 
-            a = x1*x1 + y1*y1 + x2*x2 + y2*y2 - 2*x1*x2 - 2*y1*y2
-            b = x1*x2 + y1*y2 - x1*x1 - y1*y1
-            c = x1*x1 + y1*y1 - self%radius*self%radius
+            a = dx*dx + dy*dy
+            b = xr*dx + yr*dy
+            c = xr*xr + yr*yr - self%radius*self%radius
         end block
 
         d2 = b*b - a*c
@@ -178,25 +201,35 @@ contains
             return
         end if
 
-        d = sqrt(d2)
+        d1 = sqrt(d2)
 
-        t = (-b - d)/a
-        if (t < 0.0d0) then
+        if (a >= 0) then
+            t = (-b - d1)/a
+        else
+            t = (-b + d1)/a
+        end if
+        if (t >= 0.0d0) then
             pos_hit = (p2 - p1)*t + p1
+
             if (self%origin(axis0) <= pos_hit(axis0) &
                 .and. pos_hit(axis0) <= self%origin(axis0) + self%height) then
+                hit_record%is_hit = .true.
                 hit_record%t = t
                 hit_record%position(:) = pos_hit(:)
-                hit_record%is_hit = .true.
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
                 hit_record%material = self%material
                 return
             end if
         end if
 
-        t = (-b + d)/a
-        if (t < 0.0d0) then
+        if (a >= 0) then
+            t = (-b + d1)/a
+        else
+            t = (-b - d1)/a
+        end if
+        if (t >= 0.0d0) then
             pos_hit = (p2 - p1)*t + p1
+
             if (self%origin(axis0) <= pos_hit(axis0) &
                 .and. pos_hit(axis0) <= self%origin(axis0) + self%height) then
                 hit_record%t = t

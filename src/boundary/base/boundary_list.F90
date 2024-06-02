@@ -72,6 +72,8 @@ contains
 
             if (tmp_record%t < record%t) then
                 record = tmp_record
+            else if ((tmp_record%t == record%t) .and. (tmp_record%priority > record%priority)) then
+                record = tmp_record
             end if
         end do
     end function
@@ -99,6 +101,8 @@ contains
             end if
 
             if (tmp_hit_record%t < hit_record%t) then
+                hit_record = tmp_hit_record
+            else if ((tmp_hit_record%t == hit_record%t) .and. (tmp_hit_record%priority > hit_record%priority)) then
                 hit_record = tmp_hit_record
             end if
         end do

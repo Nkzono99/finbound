@@ -11,12 +11,14 @@ module m_boundary
         logical :: is_collided = .false.
         double precision :: position(3)
         double precision :: t = -1.0d0
+        integer :: priority = 0
         type(t_Material) :: material
     contains
         procedure :: to_string => record_to_string
     end type
 
     type, abstract :: t_Boundary
+        integer :: priority = 0
         type(t_Material) :: material
     contains
         procedure(boundary_check_collision), deferred :: check_collision
@@ -136,6 +138,7 @@ contains
         type(t_CollisionRecord) :: record
 
         record = self%ref%check_collision(p1, p2)
+        record%priority = self%ref%priority
     end function
 
     pure function pboundary_hit(self, ray) result(hit_record)
@@ -144,6 +147,7 @@ contains
         type(t_HitRecord) :: hit_record
 
         hit_record = self%ref%hit(ray)
+        hit_record%priority = self%ref%priority
     end function
 
     pure function pboundary_is_overlap(self, sdoms, extent) result(is_overlap)
@@ -185,7 +189,7 @@ contains
     subroutine pboundary_destroy(self)
         class(tp_Boundary), intent(inout) :: self
 
-        deallocate(self%ref)
+        deallocate (self%ref)
     end subroutine
 
 end module

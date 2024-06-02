@@ -15,6 +15,7 @@ module m_ray
         double precision :: t = 0.0d0
         double precision :: position(3)
         double precision :: n(3)
+        integer :: priority
         type(t_Material) :: material
     end type
 

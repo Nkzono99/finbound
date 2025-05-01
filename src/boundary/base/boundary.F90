@@ -12,14 +12,14 @@ module m_boundary
         double precision :: position(3)
         double precision :: t = -1.0d0
         integer :: priority = 0
-        type(t_Material) :: material
+        class(t_Material), allocatable :: material
     contains
         procedure :: to_string => record_to_string
     end type
 
     type, abstract :: t_Boundary
         integer :: priority = 0
-        type(t_Material) :: material
+        class(t_Material), allocatable :: material
     contains
         procedure(boundary_check_collision), deferred :: check_collision
         procedure(boundary_hit), deferred :: hit

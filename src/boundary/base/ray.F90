@@ -16,7 +16,7 @@ module m_ray
         double precision :: position(3)
         double precision :: n(3)
         integer :: priority
-        type(t_Material) :: material
+        class(t_Material), allocatable :: material
     end type
 
     private

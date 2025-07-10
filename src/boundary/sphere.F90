@@ -10,7 +10,7 @@ module m_sphere_boundary
         procedure :: check_collision => sphere_check_collision
         procedure :: hit => sphere_hit
         procedure :: is_overlap => sphere_is_overlap
-        procedure :: pnormal => shpere_pnormal
+        procedure :: pnormal => sphere_pnormal
     end type
 
     type, extends(t_Sphere) :: t_CutSphereXYZ
@@ -173,7 +173,7 @@ contains
         is_overlap = (distance_squared <= self%radius**2)
     end function
 
-    pure function shpere_pnormal(self, position) result(pnormal)
+    pure function sphere_pnormal(self, position) result(pnormal)
         class(t_Sphere), intent(in) :: self
         double precision, intent(in) :: position(3)
         double precision :: pnormal(3)

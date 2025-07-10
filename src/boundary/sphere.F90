@@ -143,7 +143,7 @@ contains
         hit_record%material = self%material
     end function
 
-    pure function shpere_is_overlap(self, sdoms, extent) result(is_overlap)
+    pure function sphere_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_Sphere), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
         double precision, intent(in), optional :: extent(2, 3)
@@ -151,52 +151,26 @@ contains
 
         double precision :: extent_(2, 3)
         double precision :: sdoms_(2, 3)
-
-        logical :: origin_in_sdoms_x, origin_in_sdoms_y, origin_in_sdoms_z
-
-        double precision :: pos(3)
-        logical :: corner_in_shpere
-        integer :: i, j, k
+        double precision :: closest(3)
+        double precision :: distance_squared
+        integer :: i
 
         extent_ = get_default_extent(extent)
         sdoms_(1, :) = sdoms(1, :) - extent_(1, :)
-        sdoms_(2, :) = sdoms(2, :) - extent_(2, :)
+        sdoms_(2, :) = sdoms(2, :) + extent_(2, :)
 
-        origin_in_sdoms_x = all(sdoms_(1, :) - [self%radius, 0d0, 0d0] <= self%origin &
-                                .and. self%origin <= sdoms_(2, :) + [self%radius, 0d0, 0d0])
-        if (origin_in_sdoms_x) then
-            is_overlap = .true.
-            return
-        end if
-
-        origin_in_sdoms_y = all(sdoms_(1, :) - [0d0, self%radius, 0d0] <= self%origin &
-                                .and. self%origin <= sdoms_(2, :) + [0d0, self%radius, 0d0])
-        if (origin_in_sdoms_y) then
-            is_overlap = .true.
-            return
-        end if
-
-        origin_in_sdoms_z = all(sdoms_(1, :) - [0d0, 0d0, self%radius] <= self%origin &
-                                .and. self%origin <= sdoms_(2, :) + [0d0, 0d0, self%radius])
-        if (origin_in_sdoms_z) then
-            is_overlap = .true.
-            return
-        end if
-
-        do i = 1, 2
-            do j = 1, 2
-                do k = 1, 2
-                    pos = [sdoms_(i, 1), sdoms_(j, 2), sdoms_(k, 3)]
-                    corner_in_shpere = norm2(pos - self%origin) <= self%radius
-                    if (corner_in_shpere) then
-                        is_overlap = .true.
-                        return
-                    end if
-                end do
-            end do
+        do i = 1, 3
+            if (self%origin(i) < sdoms_(1, i)) then
+                closest(i) = sdoms_(1, i)
+            else if (self%origin(i) > sdoms_(2, i)) then
+                closest(i) = sdoms_(2, i)
+            else
+                closest(i) = self%origin(i)
+            end if
         end do
 
-        is_overlap = .false.
+        distance_squared = sum((closest - self%origin)**2)
+        is_overlap = (distance_squared <= self%radius**2)
     end function
 
     pure function shpere_pnormal(self, position) result(pnormal)
@@ -380,7 +354,7 @@ contains
 
         extent_ = get_default_extent(extent)
         sdoms_(1, :) = sdoms(1, :) - extent_(1, :)
-        sdoms_(2, :) = sdoms(2, :) - extent_(2, :)
+        sdoms_(2, :) = sdoms(2, :) + extent_(2, :)
 
         if (sdoms_(2, self%axis) < self%lower &
             .or. self%upper < sdoms_(1, self%axis)) then

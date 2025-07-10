@@ -164,7 +164,7 @@ contains
 
         extent_ = get_default_extent(extent)
         sdoms_(1, :) = sdoms(1, :) - extent_(1, :)
-        sdoms_(2, :) = sdoms(2, :) - extent_(2, :)
+        sdoms_(2, :) = sdoms(2, :) + extent_(2, :)
 
         axis0 = self%axis
         axis1 = mod(axis0, 3) + 1

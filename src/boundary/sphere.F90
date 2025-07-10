@@ -9,7 +9,7 @@ module m_sphere_boundary
     contains
         procedure :: check_collision => sphere_check_collision
         procedure :: hit => sphere_hit
-        procedure :: is_overlap => shpere_is_overlap
+        procedure :: is_overlap => sphere_is_overlap
         procedure :: pnormal => shpere_pnormal
     end type
 
@@ -362,7 +362,7 @@ contains
             return
         end if
 
-        is_overlap = shpere_is_overlap(self, sdoms_)
+        is_overlap = sphere_is_overlap(self, sdoms_)
     end function
 
     pure function cutShpereXYZ_pnormal(self, position) result(pnormal)

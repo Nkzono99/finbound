@@ -55,7 +55,7 @@ contains
         double precision, intent(in) :: p2(3)
         type(t_CollisionRecord) :: record
 
-        double precision :: origin(3), dir(3)
+        double precision :: origin(3), dir(3), negative_dir(3)
         double precision :: d(3)
         double precision :: u, v
         double precision :: t
@@ -66,6 +66,9 @@ contains
 
         origin(:) = p1(:)
         dir(:) = p2(:) - p1(:)
+        ! Reuse a contiguous vector instead of passing an array expression to
+        ! det three times (some compilers otherwise pack each temporary).
+        negative_dir = -dir
         v12(:) = self%vertex(:, 2) - self%vertex(:, 1)
         v13(:) = self%vertex(:, 3) - self%vertex(:, 1)
 
@@ -83,7 +86,7 @@ contains
         !
         ! Finally, solve for u, v, t using Cramer's rule.
 
-        denominator = det(v12, v13, -dir)
+        denominator = det(v12, v13, negative_dir)
         if (abs(denominator) <= 1d-10) then
             record%is_collided = .false.
             return
@@ -91,13 +94,13 @@ contains
 
         d(:) = origin(:) - self%vertex(:, 1)
 
-        u = det(d, v13, -dir)/denominator
+        u = det(d, v13, negative_dir)/denominator
         if (u < 0 .or. 1 < u) then
             record%is_collided = .false.
             return
         end if
 
-        v = det(v12, d, -dir)/denominator
+        v = det(v12, d, negative_dir)/denominator
         if (v < 0 .or. 1 < u + v) then
             record%is_collided = .false.
             return
@@ -124,17 +127,18 @@ contains
         type(t_Ray), intent(in) :: ray
         type(t_HitRecord) :: hit_record
 
-        double precision :: origin(3), dir(3)
+        double precision :: origin(3), dir(3), negative_dir(3)
         double precision :: d(3)
         double precision :: u, v
         double precision :: t
-        double precision :: pos_hit(3)
+        double precision :: pos_hit(3), normal(3)
         double precision :: v12(3), v13(3)
 
         double precision :: denominator
 
         origin(:) = ray%origin(:)
         dir(:) = ray%direction(:)
+        negative_dir = -dir
         v12(:) = self%vertex(:, 2) - self%vertex(:, 1)
         v13(:) = self%vertex(:, 3) - self%vertex(:, 1)
 
@@ -152,20 +156,20 @@ contains
         !
         ! Finally, solve for u, v, t using Cramer's rule.
 
-        denominator = det(v12, v13, -dir)
+        denominator = det(v12, v13, negative_dir)
         if (abs(denominator) <= 1d-10) then
             hit_record%is_hit = .false.
             return
         end if
         d(:) = origin(:) - self%vertex(:, 1)
 
-        u = det(d, v13, -dir)/denominator
+        u = det(d, v13, negative_dir)/denominator
         if (u < 0 .or. 1 < u) then
             hit_record%is_hit = .false.
             return
         end if
 
-        v = det(v12, d, -dir)/denominator
+        v = det(v12, d, negative_dir)/denominator
         if (v < 0 .or. 1 < u + v) then
             hit_record%is_hit = .false.
             return
@@ -180,12 +184,16 @@ contains
 
         pos_hit(:) = ray%origin(:) + ray%direction(:)*t
 
-        hit_record%is_hit = .true.
-        hit_record%t = t
-        hit_record%position(:) = pos_hit(:)
-        hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
-        hit_record%priority = self%priority
-        hit_record%material = self%material
+        select type (self)
+        type is (t_Triangle)
+            normal = self%n
+            if (sum(normal*(ray%origin - pos_hit)) < 0d0) normal = -normal
+        class default
+            normal = self%normal(pos_hit, ray%origin)
+        end select
+        ! Assign the complete result once; partial record writes can cause
+        ! unnecessary temporary copies in optimized gfortran builds.
+        hit_record = t_HitRecord(.true., t, pos_hit, normal, self%priority, self%material)
     end function
 
     pure function triangle_is_overlap(self, sdoms, extent) result(is_overlap)

@@ -1,5 +1,5 @@
 module m_boundary
-    use futils, only: str, dot
+    use futils, only: str
     use m_material
     use m_ray
     implicit none
@@ -127,7 +127,7 @@ contains
             return
         end if
 
-        ip = dot(normal(:), (headed_by_vector(:) - position_on_boundary(:)))
+        ip = sum(normal*(headed_by_vector - position_on_boundary))
         if (ip < 0d0) normal(:) = -normal(:)
     end function
 

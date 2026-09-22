@@ -147,12 +147,8 @@ contains
 
         pos_hit(:) = ray%origin(:) + ray%direction(:)*t
 
-        hit_record%is_hit = .true.
-        hit_record%t = t
-        hit_record%position(:) = pos_hit(:)
-        hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
-        hit_record%priority = self%priority
-        hit_record%material = self%material
+        hit_record = t_HitRecord(.true., t, pos_hit, sphere_hit_normal(self, pos_hit, ray%origin), &
+                                self%priority, self%material)
     end function
 
     pure function sphere_is_overlap(self, sdoms, extent) result(is_overlap)
@@ -191,6 +187,33 @@ contains
         double precision :: pnormal(3)
 
         pnormal(:) = normalized(position(:) - self%origin(:))
+    end function
+
+    pure function sphere_hit_normal(self, position, headed) result(normal)
+        class(t_Sphere), intent(in) :: self
+        double precision, intent(in) :: position(3), headed(3)
+        double precision :: normal(3), length
+
+        ! Only concrete library types bypass dispatch: extensions may override
+        ! either normal or pnormal, even when they inherit the hit procedure.
+        select type (self)
+        type is (t_Sphere)
+            normal = position - self%origin
+        type is (t_CutSphereXYZ)
+            normal = position - self%origin
+        class default
+            normal = self%normal(position, headed)
+            return
+        end select
+        ! Retain NORM2's scaling for very small/large coordinates, with a
+        ! fixed-size local vector instead of an assumed-shape helper call.
+        length = norm2(normal)
+        if (length /= 0d0) then
+            normal = normal/length
+        else
+            normal = 0d0
+        end if
+        if (sum(normal*(headed - position)) < 0d0) normal = -normal
     end function
 
     function new_CutSphereXYZ(origin, radius, axis, lower, upper) result(obj)
@@ -340,12 +363,8 @@ contains
 
             if (self%lower <= pos_hit(self%axis) &
                 .and. pos_hit(self%axis) <= self%upper) then
-                hit_record%is_hit = .true.
-                hit_record%position(:) = pos_hit(:)
-                hit_record%t = t
-                hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
-                hit_record%priority = self%priority
-                hit_record%material = self%material
+                hit_record = t_HitRecord(.true., t, pos_hit, sphere_hit_normal(self, pos_hit, ray%origin), &
+                                        self%priority, self%material)
                 return
             end if
         end if
@@ -356,12 +375,8 @@ contains
 
             if (self%lower <= pos_hit(self%axis) &
                 .and. pos_hit(self%axis) <= self%upper) then
-                hit_record%is_hit = .true.
-                hit_record%position(:) = pos_hit(:)
-                hit_record%t = t
-                hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
-                hit_record%priority = self%priority
-                hit_record%material = self%material
+                hit_record = t_HitRecord(.true., t, pos_hit, sphere_hit_normal(self, pos_hit, ray%origin), &
+                                        self%priority, self%material)
                 return
             end if
         end if

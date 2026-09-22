@@ -1,5 +1,5 @@
 name = "finbound"
-version = "0.7.0"
+version = "0.7.1"
 license = "Mit"
 author = "Nkzono99"
 maintainer = "71783375+Nkzono99@users.noreply.github.com"
@@ -25,3 +25,8 @@ main = "benchmark_collisions.f90"
 name = "benchmark_rotation"
 source-dir = "benchmark"
 main = "benchmark_rotation.f90"
+
+[[example]]
+name = "benchmark_shapes"
+source-dir = "benchmark"
+main = "benchmark_shapes.f90"

@@ -93,17 +93,6 @@ contains
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
 
-        ! block
-        !     double precision :: x1, y1, x2, y2
-        !     x1 = p1(axis1) - self%origin(axis1)
-        !     y1 = p1(axis2) - self%origin(axis2)
-        !     x2 = p2(axis1) - self%origin(axis1)
-        !     y2 = p2(axis2) - self%origin(axis2)
-
-        !     a = x1*x1 + y1*y1 + x2*x2 + y2*y2 - 2*x1*x2 - 2*y1*y2
-        !     b = x1*x2 + y1*y2 - x1*x1 - y1*y1
-        !     c = x1*x1 + y1*y1 - self%radius*self%radius
-        ! end block
         block
             double precision :: xr, yr
             double precision :: dx, dy
@@ -215,7 +204,7 @@ contains
                 hit_record%is_hit = .true.
                 hit_record%t = t
                 hit_record%position(:) = pos_hit(:)
-                hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%n = cylinder_hit_normal(self, pos_hit, ray%origin)
                 hit_record%priority = self%priority
                 hit_record%material = self%material
                 return
@@ -235,7 +224,7 @@ contains
                 hit_record%t = t
                 hit_record%position(:) = pos_hit(:)
                 hit_record%is_hit = .true.
-                hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%n = cylinder_hit_normal(self, pos_hit, ray%origin)
                 hit_record%priority = self%priority
                 hit_record%material = self%material
                 return
@@ -283,6 +272,20 @@ contains
         end if
 
         is_overlap = .true.
+    end function
+
+    pure function cylinder_hit_normal(self, position, headed) result(normal)
+        class(t_CylinderXYZ), intent(in) :: self
+        double precision, intent(in) :: position(3), headed(3)
+        double precision :: normal(3)
+
+        select type (self)
+        type is (t_CylinderXYZ)
+            normal = cylinder_pnormal(self, position)
+            if (sum(normal*(headed - position)) < 0d0) normal = -normal
+        class default
+            normal = self%normal(position, headed)
+        end select
     end function
 
     pure function cylinder_pnormal(self, position) result(pnormal)

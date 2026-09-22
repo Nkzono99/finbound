@@ -90,7 +90,7 @@ contains
         double precision :: a, b, c
         double precision :: d1
         double precision :: d2
-        double precision :: t
+        double precision :: t, q, root1, root2
         double precision :: pos_collided(3)
 
         axis0 = self%axis
@@ -104,6 +104,23 @@ contains
         b = (o(axis1)*d(axis1)/self%a**2) + (o(axis2)*d(axis2)/self%b**2) - (o(axis0)*d(axis0)/self%c**2)
         c = (o(axis1)/self%a)**2 + (o(axis2)/self%b)**2 - (o(axis0)/self%c)**2 - 1.0d0
 
+        if (a == 0d0) then
+            record%is_collided = .false.
+            ! The quadratic reduces to 2*b*t + c = 0.
+            if (b == 0d0) return
+            t = -c/(2d0*b)
+            if (t < 0d0 .or. t > 1d0) return
+            pos_collided = p1 + (p2 - p1)*t
+            if (pos_collided(axis0) < self%origin(axis0) - 0.5d0*self%height &
+                .or. pos_collided(axis0) > self%origin(axis0) + 0.5d0*self%height) return
+            record%is_collided = .true.
+            record%t = t
+            record%position = pos_collided
+            record%priority = self%priority
+            record%material = self%material
+            return
+        end if
+
         d2 = b*b - a*c
         if (d2 < 0.0d0) then
             record%is_collided = .false.
@@ -112,11 +129,16 @@ contains
 
         d1 = sqrt(d2)
 
-        if (a >= 0) then
-            t = (-b - d1)/a
+        ! Avoid cancellation for directions close to an asymptote.
+        q = -b - sign(d1, b)
+        if (q == 0d0) then
+            root1 = 0d0
+            root2 = 0d0
         else
-            t = (-b + d1)/a
+            root1 = q/a
+            root2 = c/q
         end if
+        t = min(root1, root2)
         if (0.0d0 <= t .and. t <= 1.0d0) then
             pos_collided = (p2 - p1)*t + p1
 
@@ -125,16 +147,13 @@ contains
                 record%is_collided = .true.
                 record%t = t
                 record%position(:) = pos_collided(:)
+                record%priority = self%priority
                 record%material = self%material
                 return
             end if
         end if
 
-        if (a >= 0) then
-            t = (-b + d1)/a
-        else
-            t = (-b - d1)/a
-        end if
+        t = max(root1, root2)
         if (0.0d0 <= t .and. t <= 1.0d0) then
             pos_collided = (p2 - p1)*t + p1
 
@@ -143,6 +162,7 @@ contains
                 record%is_collided = .true.
                 record%t = t
                 record%position(:) = pos_collided(:)
+                record%priority = self%priority
                 record%material = self%material
                 return
             end if
@@ -156,10 +176,8 @@ contains
         type(t_Ray), intent(in) :: ray
         type(t_HitRecord) :: hit_record
 
-        double precision :: t
+        double precision :: t, q, root1, root2
         double precision :: pos_hit(3)
-
-        double precision :: p1(3), p2(3)
 
         double precision :: o(3)
         double precision :: d(3)
@@ -168,19 +186,34 @@ contains
 
         integer :: axis0, axis1, axis2
 
-        p1(:) = ray%origin(:)
-        p2(:) = ray%origin(:) + ray%direction(:)
-
         axis0 = self%axis
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
 
-        o(:) = p1(:) - self%origin(:)
-        d(:) = p2(:) - p1(:)
+        o(:) = ray%origin(:) - self%origin(:)
+        d(:) = ray%direction(:)
 
         a = (d(axis1)/self%a)**2 + (d(axis2)/self%b)**2 - (d(axis0)/self%c)**2
         b = (o(axis1)*d(axis1)/self%a**2) + (o(axis2)*d(axis2)/self%b**2) - (o(axis0)*d(axis0)/self%c**2)
         c = (o(axis1)/self%a)**2 + (o(axis2)/self%b)**2 - (o(axis0)/self%c)**2 - 1.0d0
+
+        if (a == 0d0) then
+            hit_record%is_hit = .false.
+            ! The quadratic reduces to 2*b*t + c = 0.
+            if (b == 0d0) return
+            t = -c/(2d0*b)
+            if (t < 0d0) return
+            pos_hit = ray%origin + ray%direction*t
+            if (pos_hit(axis0) < self%origin(axis0) - 0.5d0*self%height &
+                .or. pos_hit(axis0) > self%origin(axis0) + 0.5d0*self%height) return
+            hit_record%is_hit = .true.
+            hit_record%t = t
+            hit_record%position = pos_hit
+            hit_record%priority = self%priority
+            hit_record%material = self%material
+            hit_record%n = self%normal(pos_hit, ray%origin)
+            return
+        end if
 
         d2 = b*b - a*c
         if (d2 < 0.0d0) then
@@ -190,13 +223,18 @@ contains
 
         d1 = sqrt(d2)
 
-        if (a >= 0) then
-            t = (-b - d1)/a
+        ! Avoid cancellation for directions close to an asymptote.
+        q = -b - sign(d1, b)
+        if (q == 0d0) then
+            root1 = 0d0
+            root2 = 0d0
         else
-            t = (-b + d1)/a
+            root1 = q/a
+            root2 = c/q
         end if
+        t = min(root1, root2)
         if (t >= 0.0d0) then
-            pos_hit = (p2 - p1)*t + p1
+            pos_hit = ray%origin + ray%direction*t
 
             if (self%origin(axis0) - 0.5d0*self%height <= pos_hit(axis0) &
                 .and. pos_hit(axis0) <= self%origin(axis0) + 0.5d0*self%height) then
@@ -204,18 +242,15 @@ contains
                 hit_record%t = t
                 hit_record%position(:) = pos_hit(:)
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%priority = self%priority
                 hit_record%material = self%material
                 return
             end if
         end if
 
-        if (a >= 0) then
-            t = (-b + d1)/a
-        else
-            t = (-b - d1)/a
-        end if
+        t = max(root1, root2)
         if (t >= 0.0d0) then
-            pos_hit = (p2 - p1)*t + p1
+            pos_hit = ray%origin + ray%direction*t
 
             if (self%origin(axis0) - 0.5d0*self%height <= pos_hit(axis0) &
                 .and. pos_hit(axis0) <= self%origin(axis0) + 0.5d0*self%height) then
@@ -223,6 +258,7 @@ contains
                 hit_record%t = t
                 hit_record%position(:) = pos_hit(:)
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%priority = self%priority
                 hit_record%material = self%material
                 return
             end if

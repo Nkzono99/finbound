@@ -26,6 +26,7 @@ contains
             print *, 'ok'
         else
             print *, "AssertionError: "//message_
+            error stop 1
         end if
     end subroutine
 
@@ -46,20 +47,20 @@ contains
 
         if (record%is_collided .neqv. is_collided) then
             print *, "AssertionError (is_collided): "//message_
-            return
+            error stop 1
         end if
 
         if (present(position)) then
             if (.not. sum(abs(record%position - position)) <= 0d0) then
                 print *, "AssertionError (position): "//message_
-                return
+                error stop 1
             end if
         end if
 
         if (present(t)) then
-            if (abs(record%t-t) > 0d0) then
+            if (.not. abs(record%t-t) <= 0d0) then
                 print *, "AssertionError (t): "//message_
-                return
+                error stop 1
             end if
         end if
 

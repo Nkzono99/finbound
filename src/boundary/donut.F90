@@ -86,6 +86,11 @@ contains
         dist = self%origin(axis0) - p1(axis0)
         dir = p2(axis0) - p1(axis0)
 
+        if (dir == 0d0) then
+            record%is_collided = .false.
+            return
+        end if
+
         t = dist/dir
 
         if (t < 0.0d0 .or. 1.0d0 < t) then
@@ -106,6 +111,7 @@ contains
         record%is_collided = .true.
         record%t = t
         record%position = pos_collided
+        record%priority = self%priority
         record%material = self%material
     end function
 
@@ -126,6 +132,11 @@ contains
 
         dist = self%origin(axis0) - ray%origin(axis0)
         dir = ray%direction(axis0)
+
+        if (dir == 0d0) then
+            hit_record%is_hit = .false.
+            return
+        end if
 
         t_hit = dist/dir
 
@@ -148,6 +159,7 @@ contains
         hit_record%t = t_hit
         hit_record%position(:) = pos_hit(:)
         hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+        hit_record%priority = self%priority
         hit_record%material = self%material
     end function
 
@@ -170,19 +182,22 @@ contains
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
 
-        if (self%origin(axis0) < sdoms(1, axis0) &
-            .or. sdoms(2, axis0) < self%origin(axis0)) then
+        if (self%origin(axis0) < sdoms_(1, axis0) &
+            .or. sdoms_(2, axis0) < self%origin(axis0)) then
             is_overlap = .false.
+            return
         end if
 
-        if (self%origin(axis1) + self%radius < sdoms(1, axis1) &
-            .or. sdoms(2, axis1) < self%origin(axis1)) then
+        if (self%origin(axis1) + self%radius < sdoms_(1, axis1) &
+            .or. sdoms_(2, axis1) < self%origin(axis1) - self%radius) then
             is_overlap = .false.
+            return
         end if
 
-        if (self%origin(axis2) + self%radius < sdoms(1, axis2) &
-            .or. sdoms(2, axis2) < self%origin(axis2)) then
+        if (self%origin(axis2) + self%radius < sdoms_(1, axis2) &
+            .or. sdoms_(2, axis2) < self%origin(axis2) - self%radius) then
             is_overlap = .false.
+            return
         end if
 
         is_overlap = .true.

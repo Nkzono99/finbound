@@ -4,7 +4,7 @@ module m_ellipsoid_boundary
     implicit none
 
     !> The ellipsoid boundary.
-    !>   x^2/a^2 + y^2/b^2 - z^2/c^2 = 1
+    !>   x^2/a^2 + y^2/b^2 + z^2/c^2 = 1
     type, extends(t_Boundary) :: t_EllipsoidXYZ
         integer :: axis
         double precision :: origin(3)
@@ -104,6 +104,11 @@ contains
         b = (o(axis1)*d(axis1)/self%a**2) + (o(axis2)*d(axis2)/self%b**2) + (o(axis0)*d(axis0)/self%c**2)
         c = (o(axis1)/self%a)**2 + (o(axis2)/self%b)**2 + (o(axis0)/self%c)**2 - 1.0d0
 
+        if (a == 0d0) then
+            record%is_collided = .false.
+            return
+        end if
+
         d2 = b*b - a*c
         if (d2 < 0.0d0) then
             record%is_collided = .false.
@@ -125,6 +130,7 @@ contains
                 record%is_collided = .true.
                 record%t = t
                 record%position(:) = pos_collided(:)
+                record%priority = self%priority
                 record%material = self%material
                 return
             end if
@@ -143,6 +149,7 @@ contains
                 record%is_collided = .true.
                 record%t = t
                 record%position(:) = pos_collided(:)
+                record%priority = self%priority
                 record%material = self%material
                 return
             end if
@@ -159,8 +166,6 @@ contains
         double precision :: t
         double precision :: pos_hit(3)
 
-        double precision :: p1(3), p2(3)
-
         double precision :: o(3)
         double precision :: d(3)
         double precision :: a, b, c
@@ -168,19 +173,21 @@ contains
 
         integer :: axis0, axis1, axis2
 
-        p1(:) = ray%origin(:)
-        p2(:) = ray%origin(:) + ray%direction(:)
-
         axis0 = self%axis
         axis1 = mod(axis0, 3) + 1
         axis2 = mod(axis0 + 1, 3) + 1
 
-        o(:) = p1(:) - self%origin(:)
-        d(:) = p2(:) - p1(:)
+        o(:) = ray%origin(:) - self%origin(:)
+        d(:) = ray%direction(:)
 
         a = (d(axis1)/self%a)**2 + (d(axis2)/self%b)**2 + (d(axis0)/self%c)**2
         b = (o(axis1)*d(axis1)/self%a**2) + (o(axis2)*d(axis2)/self%b**2) + (o(axis0)*d(axis0)/self%c**2)
         c = (o(axis1)/self%a)**2 + (o(axis2)/self%b)**2 + (o(axis0)/self%c)**2 - 1.0d0
+
+        if (a == 0d0) then
+            hit_record%is_hit = .false.
+            return
+        end if
 
         d2 = b*b - a*c
         if (d2 < 0.0d0) then
@@ -196,7 +203,7 @@ contains
             t = (-b + d1)/a
         end if
         if (t >= 0.0d0) then
-            pos_hit = (p2 - p1)*t + p1
+            pos_hit = ray%origin + ray%direction*t
 
             if (self%origin(axis0) - 0.5d0*self%height <= pos_hit(axis0) &
                 .and. pos_hit(axis0) <= self%origin(axis0) + 0.5d0*self%height) then
@@ -204,6 +211,7 @@ contains
                 hit_record%t = t
                 hit_record%position(:) = pos_hit(:)
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%priority = self%priority
                 hit_record%material = self%material
                 return
             end if
@@ -215,7 +223,7 @@ contains
             t = (-b - d1)/a
         end if
         if (t >= 0.0d0) then
-            pos_hit = (p2 - p1)*t + p1
+            pos_hit = ray%origin + ray%direction*t
 
             if (self%origin(axis0) - 0.5d0*self%height <= pos_hit(axis0) &
                 .and. pos_hit(axis0) <= self%origin(axis0) + 0.5d0*self%height) then
@@ -223,6 +231,7 @@ contains
                 hit_record%t = t
                 hit_record%position(:) = pos_hit(:)
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%priority = self%priority
                 hit_record%material = self%material
                 return
             end if

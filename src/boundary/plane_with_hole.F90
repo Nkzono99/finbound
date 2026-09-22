@@ -79,6 +79,11 @@ contains
         dist = self%origin(self%axis) - p1(self%axis)
         dir = p2(self%axis) - p1(self%axis)
 
+        if (dir == 0d0) then
+            record%is_collided = .false.
+            return
+        end if
+
         t = dist/dir
 
         if (t < 0.0d0 .or. 1.0d0 < t) then
@@ -90,7 +95,7 @@ contains
 
         r1 = pos_collided(axis1) - self%origin(axis1)
         r2 = pos_collided(axis2) - self%origin(axis2)
-        if (r1*r1 + r2*r2 < self%radius*self%radius) then
+        if (self%radius > 0d0 .and. r1*r1 + r2*r2 < self%radius*self%radius) then
             record%is_collided = .false.
             return
         end if
@@ -98,6 +103,7 @@ contains
         record%is_collided = .true.
         record%t = t
         record%position(:) = pos_collided(:)
+        record%priority = self%priority
         record%material = self%material
     end function
 
@@ -128,7 +134,7 @@ contains
 
         r1 = pos_hit(axis1) - self%origin(axis1)
         r2 = pos_hit(axis2) - self%origin(axis2)
-        if (r1*r1 + r2*r2 < self%radius*self%radius) then
+        if (self%radius > 0d0 .and. r1*r1 + r2*r2 < self%radius*self%radius) then
             hit_record%is_hit = .false.
             return
         end if
@@ -137,6 +143,7 @@ contains
         hit_record%t = t
         hit_record%position(:) = pos_hit(:)
         hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+        hit_record%priority = self%priority
         hit_record%material = self%material
     end function
 

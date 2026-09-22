@@ -9,7 +9,7 @@ module m_boundary
 
     type t_CollisionRecord
         logical :: is_collided = .false.
-        double precision :: position(3)
+        double precision :: position(3) = 0d0
         double precision :: t = -1.0d0
         integer :: priority = 0
         type(t_Material) :: material
@@ -113,7 +113,7 @@ contains
     !>          <- |
     !>             | -> normal
     !>
-    pure function boundary_normal(self, position_on_boundary, headed_by_vector) result(normal)
+    pure recursive function boundary_normal(self, position_on_boundary, headed_by_vector) result(normal)
         class(t_Boundary), intent(in) :: self
         double precision, intent(in) :: position_on_boundary(3)
         double precision, intent(in), optional :: headed_by_vector(3)
@@ -128,10 +128,10 @@ contains
         end if
 
         ip = dot(normal(:), (headed_by_vector(:) - position_on_boundary(:)))
-        normal(:) = normal(:)*(ip/abs(ip))
+        if (ip < 0d0) normal(:) = -normal(:)
     end function
 
-    pure function pboundary_check_collision(self, p1, p2) result(record)
+    pure recursive function pboundary_check_collision(self, p1, p2) result(record)
         class(tp_Boundary), intent(in) :: self
         double precision, intent(in) :: p1(3)
         double precision, intent(in) :: p2(3)
@@ -141,7 +141,7 @@ contains
         record%priority = self%ref%priority
     end function
 
-    pure function pboundary_hit(self, ray) result(hit_record)
+    pure recursive function pboundary_hit(self, ray) result(hit_record)
         class(tp_Boundary), intent(in) :: self
         type(t_Ray), intent(in) :: ray
         type(t_HitRecord) :: hit_record
@@ -150,7 +150,7 @@ contains
         hit_record%priority = self%ref%priority
     end function
 
-    pure function pboundary_is_overlap(self, sdoms, extent) result(is_overlap)
+    pure recursive function pboundary_is_overlap(self, sdoms, extent) result(is_overlap)
         class(tp_Boundary), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
         double precision, intent(in), optional :: extent(2, 3)
@@ -159,7 +159,7 @@ contains
         is_overlap = self%ref%is_overlap(sdoms, extent)
     end function
 
-    pure function pboundary_pnormal(self, position) result(pnormal)
+    pure recursive function pboundary_pnormal(self, position) result(pnormal)
         class(tp_Boundary), intent(in) :: self
         double precision, intent(in) :: position(3)
         double precision :: pnormal(3)

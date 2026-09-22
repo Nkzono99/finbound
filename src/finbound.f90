@@ -7,6 +7,8 @@ module finbound
 
     use m_boundary_list, only: t_BoundaryList, new_BoundaryList
 
+    use m_boundary_bvh, only: t_BoundaryBVH, new_BoundaryBVH
+
     use m_plane_boundary, only: t_Plane, &
                                 new_plane, &
                                 t_PlaneXYZ, &

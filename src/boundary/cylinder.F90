@@ -85,7 +85,8 @@ contains
         integer :: axis0, axis1, axis2
         double precision :: a, b, c
         double precision :: d2
-        double precision :: r
+        double precision :: r, roots(2)
+        integer :: i
         double precision :: pos_collided(3)
 
         axis0 = self%axis
@@ -116,39 +117,33 @@ contains
             c = xr*xr + yr*yr - self%radius*self%radius
         end block
 
+        if (a == 0d0) then
+            record%is_collided = .false.
+            return
+        end if
+
         d2 = b*b - a*c
         if (d2 < 0.0d0) then
             record%is_collided = .false.
             return
         end if
 
-        block
-            double precision :: d
-            d = sqrt(d2)
+        roots = [(-b - sqrt(d2))/a, (-b + sqrt(d2))/a]
+        do i = 1, 2
+            r = roots(i)
+            if (r < 0d0 .or. r > 1d0) cycle
+            pos_collided = (p2 - p1)*r + p1
+            if (pos_collided(axis0) < self%origin(axis0) &
+                .or. self%origin(axis0) + self%height < pos_collided(axis0)) cycle
 
-            r = (-b - d)/a
-            if (r < 0.0d0 .or. 1.0d0 < r) then
-                r = (-b + d)/a
-            end if
-        end block
-
-        if (r < 0.0d0 .or. 1.0d0 < r) then
-            record%is_collided = .false.
+            record%is_collided = .true.
+            record%t = r
+            record%position = pos_collided
+            record%priority = self%priority
+            record%material = self%material
             return
-        end if
-
-        pos_collided = (p2 - p1)*r + p1
-
-        if (pos_collided(axis0) < self%origin(axis0) &
-            .or. self%origin(axis0) + self%height < pos_collided(axis0)) then
-            record%is_collided = .false.
-            return
-        end if
-
-        record%is_collided = .true.
-        record%t = r
-        record%position = pos_collided
-        record%material = self%material
+        end do
+        record%is_collided = .false.
     end function
 
     pure function cylinderXYZ_hit(self, ray) result(hit_record)
@@ -156,7 +151,7 @@ contains
         type(t_Ray), intent(in) :: ray
         type(t_HitRecord) :: hit_record
 
-        double precision :: p1(3), p2(3)
+        double precision :: p1(3)
 
         double precision :: t
         double precision :: pos_hit(3)
@@ -170,7 +165,6 @@ contains
         axis2 = mod(axis0 + 1, 3) + 1
 
         p1(:) = ray%origin(:)
-        p2(:) = ray%origin(:) + ray%direction(:)
 
         block
             ! Solve equation.
@@ -187,13 +181,18 @@ contains
             double precision :: dx, dy
             xr = p1(axis1) - self%origin(axis1)
             yr = p1(axis2) - self%origin(axis2)
-            dx = p2(axis1) - p1(axis1)
-            dy = p2(axis2) - p1(axis2)
+            dx = ray%direction(axis1)
+            dy = ray%direction(axis2)
 
             a = dx*dx + dy*dy
             b = xr*dx + yr*dy
             c = xr*xr + yr*yr - self%radius*self%radius
         end block
+
+        if (a == 0d0) then
+            hit_record%is_hit = .false.
+            return
+        end if
 
         d2 = b*b - a*c
         if (d2 < 0.0d0) then
@@ -209,7 +208,7 @@ contains
             t = (-b + d1)/a
         end if
         if (t >= 0.0d0) then
-            pos_hit = (p2 - p1)*t + p1
+            pos_hit = ray%origin + ray%direction*t
 
             if (self%origin(axis0) <= pos_hit(axis0) &
                 .and. pos_hit(axis0) <= self%origin(axis0) + self%height) then
@@ -217,6 +216,7 @@ contains
                 hit_record%t = t
                 hit_record%position(:) = pos_hit(:)
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%priority = self%priority
                 hit_record%material = self%material
                 return
             end if
@@ -228,7 +228,7 @@ contains
             t = (-b - d1)/a
         end if
         if (t >= 0.0d0) then
-            pos_hit = (p2 - p1)*t + p1
+            pos_hit = ray%origin + ray%direction*t
 
             if (self%origin(axis0) <= pos_hit(axis0) &
                 .and. pos_hit(axis0) <= self%origin(axis0) + self%height) then
@@ -236,6 +236,7 @@ contains
                 hit_record%position(:) = pos_hit(:)
                 hit_record%is_hit = .true.
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%priority = self%priority
                 hit_record%material = self%material
                 return
             end if

@@ -46,12 +46,14 @@ contains
 
         record = self%triangles(1)%check_collision(p1, p2)
         if (record%is_collided) then
+            record%priority = self%priority
             record%material = self%material
             return
         end if
 
         record = self%triangles(2)%check_collision(p1, p2)
         if (record%is_collided) then
+            record%priority = self%priority
             record%material = self%material
             return
         end if
@@ -64,12 +66,14 @@ contains
 
         hit_record = self%triangles(1)%hit(ray)
         if (hit_record%is_hit) then
+            hit_record%priority = self%priority
             hit_record%material = self%material
             return
         end if
 
         hit_record = self%triangles(2)%hit(ray)
         if (hit_record%is_hit) then
+            hit_record%priority = self%priority
             hit_record%material = self%material
             return
         end if

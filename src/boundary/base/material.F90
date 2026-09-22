@@ -2,7 +2,7 @@ module m_material
     implicit none
 
     type t_Material
-        integer :: tag
+        integer :: tag = 0
     end type
 
     private

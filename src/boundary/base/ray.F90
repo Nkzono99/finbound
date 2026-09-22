@@ -11,11 +11,11 @@ module m_ray
     end type
 
     type :: t_HitRecord
-        logical :: is_hit
+        logical :: is_hit = .false.
         double precision :: t = 0.0d0
-        double precision :: position(3)
-        double precision :: n(3)
-        integer :: priority
+        double precision :: position(3) = 0d0
+        double precision :: n(3) = 0d0
+        integer :: priority = 0
         type(t_Material) :: material
     end type
 

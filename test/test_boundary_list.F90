@@ -42,6 +42,7 @@ contains
             print *, 'ok'
         else
             print *, "AssersionError: test add_boundary failed."
+            error stop 1
         end if
 
         call list%destroy

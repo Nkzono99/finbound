@@ -1,6 +1,6 @@
 program test_rectangle
     use m_boundary_base
-    use m_rectangle_boundary
+    use m_rectangleXYZ_boundary
     use m_boundary_assertion
     implicit none
 

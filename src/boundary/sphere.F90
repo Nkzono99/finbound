@@ -58,11 +58,16 @@ contains
         double precision :: r
 
         q1 = p1 - self%origin
-        q2 = p2 - self%origin
+        q2 = p2 - p1
 
-        a = sum(q1*q1 + q2*q2) - 2*sum(q1*q2)
-        b = sum(q1*q2) - sum(q1*q1)
+        a = sum(q2*q2)
+        b = sum(q1*q2)
         c = sum(q1*q1) - self%radius*self%radius
+
+        if (a == 0d0) then
+            record%is_collided = .false.
+            return
+        end if
 
         d2 = b*b - a*c
         if (d2 < 0) then
@@ -90,6 +95,7 @@ contains
         record%is_collided = .true.
         record%t = r
         record%position = pos_collided
+        record%priority = self%priority
         record%material = self%material
     end function
 
@@ -106,12 +112,17 @@ contains
         double precision :: d2
         double precision :: t
 
-        q1(:) = ray%origin(:) - self%origin(:)
-        q2(:) = (ray%origin(:) + ray%direction(:)) - self%origin(:)
+        q1 = ray%origin - self%origin
+        q2 = ray%direction
 
-        a = sum(q1*q1 + q2*q2) - 2*sum(q1*q2)
-        b = sum(q1*q2) - sum(q1*q1)
+        a = sum(q2*q2)
+        b = sum(q1*q2)
         c = sum(q1*q1) - self%radius*self%radius
+
+        if (a == 0d0) then
+            hit_record%is_hit = .false.
+            return
+        end if
 
         d2 = b*b - a*c
         if (d2 < 0) then
@@ -140,6 +151,7 @@ contains
         hit_record%t = t
         hit_record%position(:) = pos_hit(:)
         hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+        hit_record%priority = self%priority
         hit_record%material = self%material
     end function
 
@@ -239,12 +251,17 @@ contains
         double precision :: d2, d
         double precision :: t
 
-        q1(:) = p1(:) - self%origin(:)
-        q2(:) = p2(:) - self%origin(:)
+        q1 = p1 - self%origin
+        q2 = p2 - p1
 
-        a = sum(q1*q1 + q2*q2) - 2*sum(q1*q2)
-        b = sum(q1*q2) - sum(q1*q1)
+        a = sum(q2*q2)
+        b = sum(q1*q2)
         c = sum(q1*q1) - self%radius*self%radius
+
+        if (a == 0d0) then
+            record%is_collided = .false.
+            return
+        end if
 
         d2 = b*b - a*c
         if (d2 < 0) then
@@ -262,6 +279,7 @@ contains
                 record%is_collided = .true.
                 record%position(:) = pos_collided(:)
                 record%t = t
+                record%priority = self%priority
                 record%material = self%material
                 return
             end if
@@ -276,6 +294,7 @@ contains
                 record%is_collided = .true.
                 record%position(:) = pos_collided(:)
                 record%t = t
+                record%priority = self%priority
                 record%material = self%material
                 return
             end if
@@ -296,12 +315,17 @@ contains
         double precision :: d2, d
         double precision :: t
 
-        q1(:) = ray%origin(:) - self%origin(:)
-        q2(:) = (ray%origin(:) + ray%direction(:)) - self%origin(:)
+        q1 = ray%origin - self%origin
+        q2 = ray%direction
 
-        a = sum(q1*q1 + q2*q2) - 2*sum(q1*q2)
-        b = sum(q1*q2) - sum(q1*q1)
+        a = sum(q2*q2)
+        b = sum(q1*q2)
         c = sum(q1*q1) - self%radius*self%radius
+
+        if (a == 0d0) then
+            hit_record%is_hit = .false.
+            return
+        end if
 
         d2 = b*b - a*c
         if (d2 < 0) then
@@ -320,6 +344,7 @@ contains
                 hit_record%position(:) = pos_hit(:)
                 hit_record%t = t
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%priority = self%priority
                 hit_record%material = self%material
                 return
             end if
@@ -335,6 +360,7 @@ contains
                 hit_record%position(:) = pos_hit(:)
                 hit_record%t = t
                 hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+                hit_record%priority = self%priority
                 hit_record%material = self%material
                 return
             end if
@@ -362,7 +388,7 @@ contains
             return
         end if
 
-        is_overlap = sphere_is_overlap(self, sdoms_)
+        is_overlap = sphere_is_overlap(self, sdoms, extent)
     end function
 
     pure function cutShpereXYZ_pnormal(self, position) result(pnormal)

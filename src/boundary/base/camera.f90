@@ -43,6 +43,10 @@ contains
         obj%phiz = phiz
         obj%phixy = phixy
 
+        obj%nx = ranges(2, 1) - ranges(1, 1)
+        obj%ny = ranges(2, 2) - ranges(1, 2)
+        obj%nz = ranges(2, 3) - ranges(1, 3)
+
         obj%n = [0d0, 0d0, -1d0]
         obj%n = obj%rotate(obj%n)
 
@@ -104,23 +108,23 @@ contains
         obj%ny = ny
         obj%nz = nz
 
-        norm = nx*nx + ny*ny + nz*nz
+        norm = dble(nx)**2 + dble(ny)**2 + dble(nz)**2
         norm = sqrt(norm)
 
         obj%S = norm*norm
-        obj%Sl = abs(nx*ny*cos(phiz)) &
-                 + abs(ny*nz*sin(phiz)*cos(phixy)) &
-                 + abs(nz*nx*sin(phiz)*sin(phixy))
+        obj%Sl = abs(dble(nx)*dble(ny)*cos(phiz)) &
+                 + abs(dble(ny)*dble(nz)*sin(phiz)*cos(phixy)) &
+                 + abs(dble(nz)*dble(nx)*sin(phiz)*sin(phixy))
 
         obj%p(:, 1) = [-norm/2, norm/2, norm/2]
         obj%p(:, 2) = [norm/2, norm/2, norm/2]
         obj%p(:, 3) = [norm/2, -norm/2, norm/2]
         obj%p(:, 4) = [-norm/2, -norm/2, norm/2]
 
-        obj%p(:, 1) = obj%rotate(obj%p(:, 1)) + [nx/2, ny/2, nz/2]
-        obj%p(:, 2) = obj%rotate(obj%p(:, 2)) + [nx/2, ny/2, nz/2]
-        obj%p(:, 3) = obj%rotate(obj%p(:, 3)) + [nx/2, ny/2, nz/2]
-        obj%p(:, 4) = obj%rotate(obj%p(:, 4)) + [nx/2, ny/2, nz/2]
+        obj%p(:, 1) = obj%rotate(obj%p(:, 1)) + [nx/2d0, ny/2d0, nz/2d0]
+        obj%p(:, 2) = obj%rotate(obj%p(:, 2)) + [nx/2d0, ny/2d0, nz/2d0]
+        obj%p(:, 3) = obj%rotate(obj%p(:, 3)) + [nx/2d0, ny/2d0, nz/2d0]
+        obj%p(:, 4) = obj%rotate(obj%p(:, 4)) + [nx/2d0, ny/2d0, nz/2d0]
 
         v12 = obj%p(:, 2) - obj%p(:, 1)
         v23 = obj%p(:, 3) - obj%p(:, 2)

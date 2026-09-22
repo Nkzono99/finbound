@@ -1,5 +1,5 @@
 name = "finbound"
-version = "0.6.1"
+version = "0.7.0"
 license = "Mit"
 author = "Nkzono99"
 maintainer = "71783375+Nkzono99@users.noreply.github.com"
@@ -15,3 +15,13 @@ library = true
 
 [dependencies]
 futils = { git = "https://github.com/Nkzono99/futils.git"}
+
+[[example]]
+name = "benchmark_collisions"
+source-dir = "benchmark"
+main = "benchmark_collisions.f90"
+
+[[example]]
+name = "benchmark_rotation"
+source-dir = "benchmark"
+main = "benchmark_rotation.f90"

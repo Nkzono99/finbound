@@ -52,7 +52,7 @@ contains
         allocate (obj%boundaries(obj%max_nboundaries))
     end function
 
-    pure function boundaryList_check_collision(self, p1, p2) result(record)
+    pure recursive function boundaryList_check_collision(self, p1, p2) result(record)
         class(t_BoundaryList), intent(in) :: self
         double precision, intent(in) :: p1(3)
         double precision, intent(in) :: p2(3)
@@ -78,7 +78,7 @@ contains
         end do
     end function
 
-    pure function boundaryList_hit(self, ray) result(hit_record)
+    pure recursive function boundaryList_hit(self, ray) result(hit_record)
         class(t_BoundaryList), intent(in) :: self
         type(t_Ray), intent(in) :: ray
         type(t_HitRecord) :: hit_record
@@ -100,7 +100,7 @@ contains
                 cycle
             end if
 
-            if (tmp_hit_record%t < hit_record%t) then
+            if (.not. hit_record%is_hit .or. tmp_hit_record%t < hit_record%t) then
                 hit_record = tmp_hit_record
             else if ((tmp_hit_record%t == hit_record%t) .and. (tmp_hit_record%priority > hit_record%priority)) then
                 hit_record = tmp_hit_record
@@ -108,7 +108,7 @@ contains
         end do
     end function
 
-    pure function boundaryList_is_overlap(self, sdoms, extent) result(is_overlap)
+    pure recursive function boundaryList_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_BoundaryList), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
         double precision, intent(in), optional :: extent(2, 3)
@@ -129,7 +129,7 @@ contains
     !> Do not use this function and boundaryList%normal.
     !> Use the functions of the respective Boundary class,
     !> since t_BoudnaryList does not support normal vector calculations.
-    pure function boundaryList_pnormal(self, position) result(pnormal)
+    pure recursive function boundaryList_pnormal(self, position) result(pnormal)
         class(t_BoundaryList), intent(in) :: self
         double precision, intent(in) :: position(3)
         double precision :: pnormal(3)

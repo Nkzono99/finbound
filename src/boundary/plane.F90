@@ -65,6 +65,7 @@ contains
         record%is_collided = .true.
         record%t = r
         record%position = (p2 - p1)*r + p1
+        record%priority = self%priority
         record%material = self%material
     end function
 
@@ -91,6 +92,7 @@ contains
         hit_record%t = t
         hit_record%position(:) = pos_hit(:)
         hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+        hit_record%priority = self%priority
         hit_record%material = self%material
     end function
 
@@ -117,7 +119,7 @@ contains
             do iy = 1, 2
                 do iz = 1, 2
                     pos = [sdoms_(ix, 1), sdoms_(iy, 2), sdoms_(iz, 3)]
-                    if (d*dot(pos - self%origin, self%perp) < 0.0d0) then
+                    if (d*dot(pos - self%origin, self%perp) <= 0.0d0) then
                         is_overlap = .true.
                         return
                     end if
@@ -189,6 +191,7 @@ contains
         record%is_collided = .true.
         record%t = r
         record%position = pos_collided
+        record%priority = self%priority
         record%material = self%material
     end function
 
@@ -215,6 +218,7 @@ contains
         hit_record%t = t
         hit_record%position(:) = pos_hit(:)
         hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+        hit_record%priority = self%priority
         hit_record%material = self%material
     end function
 

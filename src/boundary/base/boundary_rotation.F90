@@ -75,49 +75,52 @@ contains
         obj = new_BoundaryRotationXYZ(pboundary, 3, rotation_rad, origin)
     end function
 
-    pure function boundaryRotation_check_collision(self, p1, p2) result(record)
+    pure recursive function boundaryRotation_check_collision(self, p1, p2) result(record)
         class(t_BoundaryRotationXYZ), intent(in) :: self
         double precision, intent(in) :: p1(3)
         double precision, intent(in) :: p2(3)
         type(t_CollisionRecord) :: record
 
-        double precision :: q1(3), q2(3)
+        double precision :: q1(3), q2(3), cosine, sine
 
-        q1 = self%forward(p1)
-        q2 = self%forward(p2)
+        cosine = cos(self%rotation_rad)
+        sine = sin(self%rotation_rad)
+        q1 = rotate_coefficients(p1 - self%origin, self%axis, cosine, -sine)
+        q2 = rotate_coefficients(p2 - self%origin, self%axis, cosine, -sine)
 
         record = self%pboundary%check_collision(q1, q2)
 
         if (record%is_collided) then
-            record%position = self%backward(record%position)
+            record%position = rotate_coefficients(record%position, self%axis, cosine, sine) + self%origin
+            record%priority = self%priority
         end if
     end function
 
-    pure function boundaryRotation_hit(self, ray) result(hit_record)
+    pure recursive function boundaryRotation_hit(self, ray) result(hit_record)
         class(t_BoundaryRotationXYZ), intent(in) :: self
         type(t_Ray), intent(in) :: ray
         type(t_HitRecord) :: hit_record
 
         type(t_Ray) :: ray_rotated
-        double precision :: to(3)
+        double precision :: cosine, sine
 
+        cosine = cos(self%rotation_rad)
+        sine = sin(self%rotation_rad)
         ! Converts to rotational coordinate system.
-        to(:) = ray%origin(:) + ray%direction(:)
-        ray_rotated%origin(:) = self%forward(ray%origin(:))
-        to(:) = self%forward(to(:))
-        ray_rotated%direction(:) = to(:) - ray_rotated%origin(:)
+        ray_rotated%origin = rotate_coefficients(ray%origin - self%origin, self%axis, cosine, -sine)
+        ray_rotated%direction = rotate_coefficients(ray%direction, self%axis, cosine, -sine)
 
         ! Ray at.
         hit_record = self%pboundary%hit(ray_rotated)
+        if (.not. hit_record%is_hit) return
 
         ! Inverse converts from rotational coordinate system.
-        to(:) = hit_record%position(:) + hit_record%n(:)
-        hit_record%position(:) = self%backward(hit_record%position(:))
-        to(:) = self%backward(to(:))
-        hit_record%n(:) = to(:) - hit_record%position(:)
+        hit_record%position = rotate_coefficients(hit_record%position, self%axis, cosine, sine) + self%origin
+        hit_record%n = rotate_coefficients(hit_record%n, self%axis, cosine, sine)
+        hit_record%priority = self%priority
     end function
 
-    pure function boundaryRotation_is_overlap(self, sdoms, extent) result(is_overlap)
+    pure recursive function boundaryRotation_is_overlap(self, sdoms, extent) result(is_overlap)
         class(t_BoundaryRotationXYZ), intent(in) :: self
         double precision, intent(in) :: sdoms(2, 3)
         double precision, intent(in), optional :: extent(2, 3)
@@ -125,31 +128,46 @@ contains
 
         double precision :: extent_(2, 3)
         double precision :: sdoms_(2, 3)
+        double precision :: local_bounds(2, 3), corner(3)
+        double precision :: cosine, sine
+        integer :: ix, iy, iz
 
         extent_ = get_default_extent(extent)
         sdoms_(1, :) = sdoms(1, :) - extent_(1, :)
         sdoms_(2, :) = sdoms(2, :) + extent_(2, :)
+        cosine = cos(self%rotation_rad)
+        sine = sin(self%rotation_rad)
 
-        sdoms_(1, :) = self%forward(sdoms_(1, :))
-        sdoms_(2, :) = self%forward(sdoms_(2, :))
+        local_bounds(1, :) = huge(1d0)
+        local_bounds(2, :) = -huge(1d0)
+        do ix = 1, 2
+            do iy = 1, 2
+                do iz = 1, 2
+                    corner = [sdoms_(ix, 1), sdoms_(iy, 2), sdoms_(iz, 3)] - self%origin
+                    corner = rotate_coefficients(corner, self%axis, cosine, -sine)
+                    local_bounds(1, :) = min(local_bounds(1, :), corner)
+                    local_bounds(2, :) = max(local_bounds(2, :), corner)
+                end do
+            end do
+        end do
 
-        is_overlap = self%pboundary%is_overlap(sdoms)
+        ! The world-space extent has already been applied before rotation.
+        is_overlap = self%pboundary%is_overlap(local_bounds, extent=0d0*extent_)
     end function
 
-    pure function boundaryRotation_pnormal(self, position) result(pnormal)
+    pure recursive function boundaryRotation_pnormal(self, position) result(pnormal)
         class(t_BoundaryRotationXYZ), intent(in) :: self
         double precision, intent(in) :: position(3)
         double precision :: pnormal(3)
 
-        double precision :: p(3), pn(3), pnn(3), pnb(3)
+        double precision :: p(3), pn(3), cosine, sine
 
-        p(:) = self%forward(position)
+        cosine = cos(self%rotation_rad)
+        sine = sin(self%rotation_rad)
+        p = rotate_coefficients(position - self%origin, self%axis, cosine, -sine)
 
         pn(:) = self%pboundary%pnormal(p(:))
-        pnn(:) = p(:) + pn(:)
-
-        pnb(:) = self%backward(pnn(:))
-        pnormal(:) = pnn(:) - position(:)
+        pnormal = rotate_coefficients(pn, self%axis, cosine, sine)
     end function
 
     subroutine boundaryRotation_destroy(self)
@@ -158,38 +176,47 @@ contains
         call self%pboundary%destroy()
     end subroutine
 
-    pure function boundaryRotation_forward(self, p) result(q)
+    pure recursive function boundaryRotation_forward(self, p) result(q)
         class(t_BoundaryRotationXYZ), intent(in) :: self
         double precision, intent(in) :: p(3)
         double precision :: q(3)
 
-        q = p - self%origin
-
-        select case (self%axis)
-        case (1)
-            q = rot3d_x(q, -self%rotation_rad)
-        case (2)
-            q = rot3d_y(q, -self%rotation_rad)
-        case (3)
-            q = rot3d_z(q, -self%rotation_rad)
-        end select
+        q = rotate_vector(p - self%origin, self%axis, -self%rotation_rad)
     end function
 
-    pure function boundaryRotation_backward(self, q) result(p)
+    pure recursive function boundaryRotation_backward(self, q) result(p)
         class(t_BoundaryRotationXYZ), intent(in) :: self
         double precision, intent(in) :: q(3)
         double precision :: p(3)
 
-        select case (self%axis)
-        case (1)
-            p = rot3d_x(q, self%rotation_rad)
-        case (2)
-            p = rot3d_y(q, self%rotation_rad)
-        case (3)
-            p = rot3d_z(q, self%rotation_rad)
-        end select
+        p = rotate_vector(q, self%axis, self%rotation_rad) + self%origin
+    end function
 
-        p = p + self%origin
+    pure function rotate_vector(vector, axis, angle) result(rotated)
+        double precision, intent(in) :: vector(3), angle
+        integer, intent(in) :: axis
+        double precision :: rotated(3)
+
+        rotated = rotate_coefficients(vector, axis, cos(angle), sin(angle))
+    end function
+
+    pure function rotate_coefficients(vector, axis, cosine, sine) result(rotated)
+        double precision, intent(in) :: vector(3), cosine, sine
+        integer, intent(in) :: axis
+        double precision :: rotated(3)
+
+        rotated = vector
+        select case (axis)
+        case (1)
+            rotated(2) = cosine*vector(2) + sine*vector(3)
+            rotated(3) = -sine*vector(2) + cosine*vector(3)
+        case (2)
+            rotated(1) = -sine*vector(3) + cosine*vector(1)
+            rotated(3) = cosine*vector(3) + sine*vector(1)
+        case (3)
+            rotated(1) = cosine*vector(1) + sine*vector(2)
+            rotated(2) = -sine*vector(1) + cosine*vector(2)
+        end select
     end function
 
 end module

@@ -111,6 +111,7 @@ contains
         record%is_collided = .true.
         record%t = r
         record%position = pos_collided
+        record%priority = self%priority
         record%material = self%material
     end function
 
@@ -150,6 +151,7 @@ contains
         hit_record%t = t
         hit_record%position(:) = pos_hit(:)
         hit_record%n(:) = self%normal(pos_hit(:), ray%origin(:))
+        hit_record%priority = self%priority
         hit_record%material = self%material
     end function
 
